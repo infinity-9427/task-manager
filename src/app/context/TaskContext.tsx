@@ -2,8 +2,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import { Task, TaskStatus } from '../_hooks/useDragAndDrop';
 
-// Remove the initialTasks array and start with an empty array
-
 interface TaskContextValue {
   tasks: Task[];
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
@@ -19,15 +17,12 @@ const TaskContext = createContext<TaskContextValue>({
 });
 
 export function TaskProvider({ children }: { children: React.ReactNode }) {
-  // Initialize with empty array instead of initialTasks
   const [tasks, setTasks] = useState<Task[]>([]);
 
-  // Helper to generate a unique ID
   const generateId = (): string => {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   };
 
-  // Add a new task with auto-generated ID
   const addTask = (taskData: Omit<Task, 'id'>) => {
     const newTask: Task = {
       id: generateId(),
@@ -37,7 +32,6 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setTasks(currentTasks => [...currentTasks, newTask]);
   };
 
-  // Update a task's status
   const updateTaskStatus = (taskId: string, newStatus: TaskStatus) => {
     setTasks(currentTasks => 
       currentTasks.map(task => 

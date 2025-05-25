@@ -9,12 +9,10 @@ import CustomAlert from "@/components/CustomAlert";
 const KanbanBoard = () => {
   const { tasks, setTasks } = useTaskContext();
 
-  // Derive tasks for each column from the context
   const pendienteTasks = tasks.filter(task => task.status === "pendiente");
   const enProgresoTasks = tasks.filter(task => task.status === "en progreso");
   const completadaTasks = tasks.filter(task => task.status === "completada");
 
-  // Helper setters that update only the tasks of a given column
   const setPendienteTasks = (newTasks: Task[]) => {
     setTasks(prev => [
       ...prev.filter(task => task.status !== "pendiente"),
@@ -34,25 +32,20 @@ const KanbanBoard = () => {
     ]);
   };
 
-  // For inline edit of task description
   const [editingTask, setEditingTask] = useState<{ id: string; column: TaskStatus } | null>(null);
   const [editedDescription, setEditedDescription] = useState("");
 
-  // State for CustomAlert
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState<"success" | "error" | "warning">("success");
 
-  // Handle status change (API calls, etc.)
   const handleStatusChange = async (taskIds: string[], newStatus: TaskStatus) => {
     try {
-      // Actually update the tasks in the context
       const updatedTasks = tasks.map(task => 
         taskIds.includes(task.id) 
           ? { ...task, status: newStatus } 
           : task
       );
       
-      // Update all tasks in context with their new statuses
       setTasks(updatedTasks);
       
       console.log(`Tasks ${taskIds.join(", ")} updated to ${newStatus}`);
@@ -66,7 +59,6 @@ const KanbanBoard = () => {
     }
   };
 
-  // Helper to get display name for statuses
   const getStatusDisplayName = (status: TaskStatus): string => {
     switch (status) {
       case "pendiente": return "Pendiente";
@@ -76,7 +68,6 @@ const KanbanBoard = () => {
     }
   };
 
-  // Use our custom hook for each column with context-derived tasks and setters
   const pendienteColumn = useKanbanDragAndDrop({
     pendienteTasks,
     enProgresoTasks,
@@ -143,7 +134,6 @@ const KanbanBoard = () => {
     },
   });
 
-  // Update the description for a task in the specified column
   const updateTaskDescription = (column: TaskStatus, id: string, newDescription: string) => {
     try {
       const updater = (tasksColumn: Task[]) =>
@@ -199,7 +189,6 @@ const KanbanBoard = () => {
     height: "100%"
   };
 
-  // Render a single task row with dynamic status icon and inline editing
   const renderTask = (task: Task, column: TaskStatus) => {
     const isEditing = editingTask && editingTask.id === task.id && editingTask.column === column;
     const effectiveStatus = column;
@@ -233,7 +222,6 @@ const KanbanBoard = () => {
     );
   };
 
-  // Get status icon remains unchanged
   const getStatusIcon = (status: Task["status"]) => {
     switch (status) {
       case "pendiente":
@@ -283,7 +271,6 @@ const KanbanBoard = () => {
     }
   };
 
-  // Add this to your KanbanBoard component to debug tasks state
   useEffect(() => {
     console.log('Current tasks in context:', tasks);
     console.log('Pendiente tasks:', pendienteTasks);
@@ -291,21 +278,6 @@ const KanbanBoard = () => {
     console.log('Completada tasks:', completadaTasks);
   }, [tasks, pendienteTasks, enProgresoTasks, completadaTasks]);
 
-  // Add this near your other useEffect
-  useEffect(() => {
-    console.log('pendienteTasks vs pendienteColumn.items:', {
-      fromContext: pendienteTasks,
-      fromHook: pendienteColumn.items
-    });
-    console.log('enProgresoTasks vs enProgresoColumn.items:', {
-      fromContext: enProgresoTasks,
-      fromHook: enProgresoColumn.items
-    });
-    console.log('completadaTasks vs completadaColumn.items:', {
-      fromContext: completadaTasks,
-      fromHook: completadaColumn.items
-    });
-  }, [pendienteTasks, pendienteColumn.items, enProgresoTasks, enProgresoColumn.items, completadaTasks, completadaColumn.items]);
 
   return (
     <div>

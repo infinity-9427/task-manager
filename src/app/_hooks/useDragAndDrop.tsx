@@ -1,12 +1,10 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useDragAndDrop as useFormKitDragAndDrop } from '@formkit/drag-and-drop/react';
 
-// Define TaskStatus type to ensure we only use valid statuses
 export type TaskStatus = 'pendiente' | 'en progreso' | 'completada';
 
-// Task interface to ensure consistent task shape
 export interface Task {
   id: string;
   title: string;
@@ -40,9 +38,6 @@ export function useKanbanDragAndDrop({
   pendienteTasks,
   enProgresoTasks,
   completadaTasks,
-  setPendienteTasks,
-  setEnProgresoTasks,
-  setCompletadaTasks,
   columnType,
   options = {},
 }: UseKanbanDragAndDropProps) {
@@ -60,27 +55,11 @@ export function useKanbanDragAndDrop({
     }
   }, [pendienteTasks, enProgresoTasks, completadaTasks, columnType]);
 
-  // Get the display message for the alert
-  const getStatusMessage = (status: TaskStatus): string => {
-    switch (status) {
-      case 'pendiente':
-        return '¡Tarea actualizada a Pendiente!';
-      case 'en progreso':
-        return '¡Tarea actualizada a En Progreso!';
-      case 'completada':
-        return '¡Tarea actualizada a Completada!';
-      default:
-        return '¡Tarea actualizada!';
-    }
-  };
 
-  // Create the drop handler
   const handleDrop = async (newItems: Task[]) => {
     try {
-      // Get IDs of tasks that are now in this column after the drop
       const taskIdsInNewList = newItems.map((item) => item.id);
 
-      // If onStatusChange is provided, call it.
       if (options.onStatusChange) {
         await options.onStatusChange(taskIdsInNewList, columnType);
       }
@@ -89,12 +68,10 @@ export function useKanbanDragAndDrop({
       const err = error instanceof Error ? error : new Error('An unknown error occurred during drag and drop');
       console.error('Drag and drop error:', err);
 
-      // Alert for errors during the drop operation itself.
       if (options.onAlert) {
         options.onAlert(`Error al procesar el arrastre: ${err.message}`, 'error');
       }
 
-      // Call the generic error handler if provided
       if (options.onError) {
         options.onError(err);
       }
