@@ -1,13 +1,6 @@
 'use client'
 import React, { createContext, useContext, useState } from 'react';
-import { Task, TaskStatus } from '../_hooks/useDragAndDrop';
-
-interface TaskContextValue {
-  tasks: Task[];
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
-  addTask: (task: Omit<Task, 'id'>) => void;
-  updateTaskStatus: (taskId: string, newStatus: TaskStatus) => void;
-}
+import  { TaskStatus, Task, TaskContextValue } from '@/app/shared/types/tasks';
 
 const TaskContext = createContext<TaskContextValue>({
   tasks: [],
@@ -24,11 +17,22 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addTask = (taskData: Omit<Task, 'id'>) => {
+    // Ensure status is one of the valid enum values
+    let normalizedStatus = taskData.status;
+    
+    // Validation to ensure status is a valid enum value
+    if (!Object.values(TaskStatus).includes(taskData.status)) {
+      console.warn(`Invalid status: ${taskData.status}, defaulting to PENDING`);
+      normalizedStatus = TaskStatus.PENDING;
+    }
+    
     const newTask: Task = {
       id: generateId(),
-      ...taskData
+      ...taskData,
+      status: normalizedStatus
     };
     
+    console.log('Adding new task with normalized status:', newTask);
     setTasks(currentTasks => [...currentTasks, newTask]);
   };
 

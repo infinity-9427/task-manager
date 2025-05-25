@@ -1,34 +1,56 @@
 'use client'
 import React, { useState, useEffect } from "react";
-import { z } from "zod";
 import { useTaskContext } from "../context/TaskContext";
-import { useKanbanDragAndDrop, Task, TaskStatus } from "../_hooks/useDragAndDrop";
+import { TaskStatus, Task } from '@/app/shared/types/tasks';
+import { useKanbanDragAndDrop } from "../_hooks/useDragAndDrop";
 import CustomAlert from "@/components/CustomAlert";
 
 
 const KanbanBoard = () => {
-  const { tasks, setTasks } = useTaskContext();
-
-  const pendienteTasks = tasks.filter(task => task.status === "pendiente");
-  const enProgresoTasks = tasks.filter(task => task.status === "en progreso");
-  const completadaTasks = tasks.filter(task => task.status === "completada");
+  // Debug to see what values we're working with
+  console.log('TaskStatus enum values:', Object.values(TaskStatus));
+  
+  // Ensure we have a valid tasks array even if context isn't ready
+  const contextValue = useTaskContext();
+  const tasks = Array.isArray(contextValue?.tasks) ? contextValue.tasks : [];
+  const setTasks = contextValue?.setTasks || (() => {});
+  
+  console.log('Tasks from context:', tasks);
+  
+  // String comparison for enum values with spaces can be tricky
+  // Let's make sure we're comparing exactly what we expect
+  const pendienteTasks = tasks.filter(task => 
+    task && task.status === TaskStatus.PENDING
+  );
+  const enProgresoTasks = tasks.filter(task => 
+    task && task.status === TaskStatus.IN_PROGRESS
+  );
+  const completadaTasks = tasks.filter(task => 
+    task && task.status === TaskStatus.COMPLETED
+  );
+  
+  console.log('Filtered tasks:', {
+    pending: pendienteTasks,
+    inProgress: enProgresoTasks,
+    completed: completadaTasks
+  });
 
   const setPendienteTasks = (newTasks: Task[]) => {
     setTasks(prev => [
-      ...prev.filter(task => task.status !== "pendiente"),
-      ...newTasks.map(task => ({ ...task, status: "pendiente" as TaskStatus }))
+      ...prev.filter(task => task.status !== TaskStatus.PENDING),
+      ...newTasks.map(task => ({ ...task, status: TaskStatus.PENDING as TaskStatus }))
     ]);
   };
   const setEnProgresoTasks = (newTasks: Task[]) => {
     setTasks(prev => [
-      ...prev.filter(task => task.status !== "en progreso"),
-      ...newTasks.map(task => ({ ...task, status: "en progreso" as TaskStatus }))
+      ...prev.filter(task => task.status !== TaskStatus.IN_PROGRESS),
+      ...newTasks.map(task => ({ ...task, status: TaskStatus.IN_PROGRESS as TaskStatus }))
     ]);
   };
   const setCompletadaTasks = (newTasks: Task[]) => {
     setTasks(prev => [
-      ...prev.filter(task => task.status !== "completada"),
-      ...newTasks.map(task => ({ ...task, status: "completada" as TaskStatus }))
+      ...prev.filter(task => task.status !== TaskStatus.COMPLETED),
+      ...newTasks.map(task => ({ ...task, status: TaskStatus.COMPLETED as TaskStatus }))
     ]);
   };
 
@@ -61,9 +83,9 @@ const KanbanBoard = () => {
 
   const getStatusDisplayName = (status: TaskStatus): string => {
     switch (status) {
-      case "pendiente": return "Pendiente";
-      case "en progreso": return "En Progreso";
-      case "completada": return "Completada";
+      case TaskStatus.PENDING: return TaskStatus.PENDING;
+      case TaskStatus.IN_PROGRESS: return TaskStatus.IN_PROGRESS;
+      case TaskStatus.COMPLETED: return TaskStatus.COMPLETED;
       default: return status;
     }
   };
@@ -75,7 +97,7 @@ const KanbanBoard = () => {
     setPendienteTasks,
     setEnProgresoTasks,
     setCompletadaTasks,
-    columnType: "pendiente",
+    columnType: TaskStatus.PENDING,
     options: {
       onStatusChange: handleStatusChange,
       onError: (error) => {
@@ -97,7 +119,7 @@ const KanbanBoard = () => {
     setPendienteTasks,
     setEnProgresoTasks,
     setCompletadaTasks,
-    columnType: "en progreso",
+    columnType: TaskStatus.IN_PROGRESS,
     options: {
       onStatusChange: handleStatusChange,
       onError: (error) => {
@@ -119,7 +141,7 @@ const KanbanBoard = () => {
     setPendienteTasks,
     setEnProgresoTasks,
     setCompletadaTasks,
-    columnType: "completada",
+    columnType: TaskStatus.COMPLETED,
     options: {
       onStatusChange: handleStatusChange,
       onError: (error) => {
@@ -139,9 +161,9 @@ const KanbanBoard = () => {
       const updater = (tasksColumn: Task[]) =>
         tasksColumn.map((task) => (task.id === id ? { ...task, description: newDescription } : task));
 
-      if (column === "pendiente") setPendienteTasks(updater(pendienteTasks));
-      if (column === "en progreso") setEnProgresoTasks(updater(enProgresoTasks));
-      if (column === "completada") setCompletadaTasks(updater(completadaTasks));
+      if (column === TaskStatus.PENDING) setPendienteTasks(updater(pendienteTasks));
+      if (column === TaskStatus.IN_PROGRESS) setEnProgresoTasks(updater(enProgresoTasks));
+      if (column === TaskStatus.COMPLETED) setCompletadaTasks(updater(completadaTasks));
 
       setEditingTask(null);
       setAlertMessage("Descripción actualizada");
@@ -224,7 +246,7 @@ const KanbanBoard = () => {
 
   const getStatusIcon = (status: Task["status"]) => {
     switch (status) {
-      case "pendiente":
+      case TaskStatus.PENDING:
         return (
           <span style={{
             backgroundColor: "#fff7ed", 
@@ -238,7 +260,7 @@ const KanbanBoard = () => {
             Pendiente
           </span>
         );
-      case "en progreso":
+      case TaskStatus.IN_PROGRESS:
         return (
           <span style={{
             backgroundColor: "#eff6ff", 
@@ -252,7 +274,7 @@ const KanbanBoard = () => {
             En progreso
           </span>
         );
-      case "completada":
+      case TaskStatus.COMPLETED:
         return (
           <span style={{
             backgroundColor: "#ecfdf5", 
@@ -296,21 +318,21 @@ const KanbanBoard = () => {
         <div className="kanban-column" style={columnStyle}>
           <h2 style={headerStyle}>Pendiente</h2>
           <ul ref={pendienteColumn.listRef} style={listStyle}>
-            {pendienteTasks.map((task) => renderTask(task, "pendiente"))}
+            {pendienteTasks.map((task) => renderTask(task, TaskStatus.PENDING))}
           </ul>
         </div>
         
         <div className="kanban-column" style={columnStyle}>
           <h2 style={headerStyle}>En Progreso</h2>
           <ul ref={enProgresoColumn.listRef} style={listStyle}>
-            {enProgresoTasks.map((task) => renderTask(task, "en progreso"))}
+            {enProgresoTasks.map((task) => renderTask(task, TaskStatus.IN_PROGRESS))}
           </ul>
         </div>
         
         <div className="kanban-column" style={columnStyle}>
           <h2 style={headerStyle}>Completada</h2>
           <ul ref={completadaColumn.listRef} style={listStyle}>
-            {completadaTasks.map((task) => renderTask(task, "completada"))}
+            {completadaTasks.map((task) => renderTask(task, TaskStatus.COMPLETED))}
           </ul>
         </div>
       </div>

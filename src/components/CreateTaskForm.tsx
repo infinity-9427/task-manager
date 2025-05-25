@@ -2,13 +2,13 @@
 import { z } from 'zod';
 import React, { useState } from 'react';
 import CustomAlert from './CustomAlert';
-import { Task, TaskStatus } from '../app/_hooks/useDragAndDrop';
+import  { TaskStatus, Task } from '@/app/shared/types/tasks';
 import { useTaskContext } from '../app/context/TaskContext';
 
 const taskFormSchema = z.object({
   title: z.string().min(1, 'El título es obligatorio'),
   description: z.string().optional(),
-  status: z.enum(['pendiente', 'en progreso', 'completada']).default('pendiente'),
+  status: z.enum([TaskStatus.PENDING, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED]).default(TaskStatus.PENDING),
 });
 
 type TaskFormData = z.infer<typeof taskFormSchema>;
@@ -20,7 +20,7 @@ export default function CreateTaskForm({ onCreate }: { onCreate?: (task: Task) =
   const [formData, setFormData] = useState<TaskFormData>({
     title: '',
     description: '',
-    status: 'pendiente',
+    status: TaskStatus.PENDING,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -89,7 +89,7 @@ export default function CreateTaskForm({ onCreate }: { onCreate?: (task: Task) =
     setFormData({ 
       title: '', 
       description: '', 
-      status: 'pendiente' 
+      status: TaskStatus.PENDING
     });
     setErrors({});
   };
@@ -97,11 +97,11 @@ export default function CreateTaskForm({ onCreate }: { onCreate?: (task: Task) =
   // Define status badge color based on task status
   const getStatusBadgeColor = (status: TaskStatus) => {
     switch (status) {
-      case 'pendiente':
+      case TaskStatus.PENDING:
         return 'bg-yellow-200 text-yellow-800';
-      case 'en progreso':
+      case TaskStatus.IN_PROGRESS:
         return 'bg-blue-200 text-blue-800';
-      case 'completada':
+      case TaskStatus.COMPLETED:
         return 'bg-green-200 text-green-800';
       default:
         return 'bg-gray-200 text-gray-800';
@@ -166,7 +166,7 @@ export default function CreateTaskForm({ onCreate }: { onCreate?: (task: Task) =
               Estado de la Tarea
             </label>
             <div className="flex space-x-2">
-              {(['pendiente', 'en progreso', 'completada'] as TaskStatus[]).map((statusOption) => (
+              {([TaskStatus.PENDING, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED] as TaskStatus[]).map((statusOption) => (
                 <button
                   key={statusOption}
                   type="button"
