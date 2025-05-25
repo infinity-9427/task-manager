@@ -14,8 +14,8 @@ const taskFormSchema = z.object({
 type TaskFormData = z.infer<typeof taskFormSchema>;
 
 export default function CreateTaskForm({ onCreate }: { onCreate?: (task: Task) => void }) {
-  // Get both tasks and setTasks from context
-  const { tasks, setTasks } = useTaskContext();
+  // Get addTask from context instead of directly accessing setTasks
+  const { addTask } = useTaskContext();
   
   const [formData, setFormData] = useState<TaskFormData>({
     title: '',
@@ -60,24 +60,28 @@ export default function CreateTaskForm({ onCreate }: { onCreate?: (task: Task) =
       return;
     }
 
-    const newTask: Task = {
-      id: Date.now().toString(),
+    // Use context's addTask method instead of manually creating task with ID
+    const taskData = {
       title: formData.title,
       description: formData.description || '',
       status: formData.status as TaskStatus,
     };
 
-    // Update context
-    setTasks((prevTasks) => {
-      const updatedTasks = [...prevTasks, newTask];
-      console.log('Updated tasks in context:', updatedTasks);
-      return updatedTasks;
-    });
+    // Add task to context (ID will be generated inside addTask method)
+    addTask(taskData);
+    console.log('Added new task to context:', taskData);
     
-    // Also call the onCreate callback if provided
+    // Call the onCreate callback if provided
+    // Since the ID is generated in the context, we can't pass the full task to onCreate
+    // If onCreate is needed, we might need to refactor this approach
     if (onCreate) {
-      console.log('Calling onCreate with task:', newTask);
-      onCreate(newTask);
+      // This is a workaround - the ID won't match the one generated in the context
+      const tempTask: Task = {
+        ...taskData,
+        id: 'temp-' + Date.now().toString()
+      };
+      console.log('Calling onCreate with task:', tempTask);
+      onCreate(tempTask);
     }
     
     setAlertMessage('¡Tarea creada exitosamente!');

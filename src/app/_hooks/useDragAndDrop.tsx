@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useDragAndDrop as useFormKitDragAndDrop } from '@formkit/drag-and-drop/react';
 
 // Define TaskStatus type to ensure we only use valid statuses
@@ -11,7 +11,6 @@ export interface Task {
   id: string;
   title: string;
   description: string;
-  assignedUser: string;
   status: TaskStatus;
 }
 
@@ -47,8 +46,8 @@ export function useKanbanDragAndDrop({
   columnType,
   options = {},
 }: UseKanbanDragAndDropProps) {
-  // Determine which tasks to use based on column type
-  const getTasks = () => {
+  // Determine which tasks to use based on column type using useMemo
+  const currentTasks = useMemo(() => {
     switch (columnType) {
       case 'pendiente':
         return pendienteTasks;
@@ -59,7 +58,7 @@ export function useKanbanDragAndDrop({
       default:
         return [];
     }
-  };
+  }, [pendienteTasks, enProgresoTasks, completadaTasks, columnType]);
 
   // Get the display message for the alert
   const getStatusMessage = (status: TaskStatus): string => {
@@ -82,20 +81,9 @@ export function useKanbanDragAndDrop({
       const taskIdsInNewList = newItems.map((item) => item.id);
 
       // If onStatusChange is provided, call it.
-      // This function (handleStatusChange in page.tsx) is responsible for:
-      // 1. Updating the global `tasks` context with the new status for these tasks.
-      // 2. Setting appropriate alert messages.
-      // The useEffect in page.tsx will then update the local column states
-      // (pendienteTasks, enProgresoTasks, completadaTasks) based on the global context.
       if (options.onStatusChange) {
         await options.onStatusChange(taskIdsInNewList, columnType);
       }
-
-      // The success alert is now handled by `handleStatusChange` in page.tsx.
-      // We can remove the redundant success alert call from here.
-      // if (options.onAlert) {
-      //   options.onAlert(getStatusMessage(columnType), 'success');
-      // }
 
     } catch (error) {
       const err = error instanceof Error ? error : new Error('An unknown error occurred during drag and drop');
@@ -114,7 +102,7 @@ export function useKanbanDragAndDrop({
   };
 
   // Use the FormKit drag and drop hook with our custom handler
-  const [listRef, items] = useFormKitDragAndDrop<HTMLUListElement, Task>(getTasks(), {
+  const [listRef, items] = useFormKitDragAndDrop<HTMLUListElement, Task>(currentTasks, {
     group: 'kanban',
     onDrop: handleDrop,
     droppable: true,
