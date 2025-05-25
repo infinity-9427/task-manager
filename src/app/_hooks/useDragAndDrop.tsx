@@ -78,55 +78,35 @@ export function useKanbanDragAndDrop({
   // Create the drop handler
   const handleDrop = async (newItems: Task[]) => {
     try {
-      // Get IDs of tasks in this column after drop
-      const newItemIds = new Set(newItems.map((item) => item.id));
+      // Get IDs of tasks that are now in this column after the drop
+      const taskIdsInNewList = newItems.map((item) => item.id);
 
-      // Update status for all tasks in this column
-      const updatedItems = newItems.map((item) => ({ ...item, status: columnType }));
-
-      // Remove these items from other columns
-      const filteredPendiente = pendienteTasks.filter((task) => !newItemIds.has(task.id));
-      const filteredEnProgreso = enProgresoTasks.filter((task) => !newItemIds.has(task.id));
-      const filteredCompletada = completadaTasks.filter((task) => !newItemIds.has(task.id));
-
-      // Update the columns based on the current column type
-      switch (columnType) {
-        case 'pendiente':
-          setPendienteTasks(updatedItems);
-          setEnProgresoTasks(filteredEnProgreso);
-          setCompletadaTasks(filteredCompletada);
-          break;
-        case 'en progreso':
-          setPendienteTasks(filteredPendiente);
-          setEnProgresoTasks(updatedItems);
-          setCompletadaTasks(filteredCompletada);
-          break;
-        case 'completada':
-          setPendienteTasks(filteredPendiente);
-          setEnProgresoTasks(filteredEnProgreso);
-          setCompletadaTasks(updatedItems);
-          break;
-      }
-
-      // If onStatusChange is provided, call it with the affected task IDs
+      // If onStatusChange is provided, call it.
+      // This function (handleStatusChange in page.tsx) is responsible for:
+      // 1. Updating the global `tasks` context with the new status for these tasks.
+      // 2. Setting appropriate alert messages.
+      // The useEffect in page.tsx will then update the local column states
+      // (pendienteTasks, enProgresoTasks, completadaTasks) based on the global context.
       if (options.onStatusChange) {
-        await options.onStatusChange(Array.from(newItemIds), columnType);
+        await options.onStatusChange(taskIdsInNewList, columnType);
       }
 
-      // Use the custom alert instead of Sonner
-      if (options.onAlert) {
-        options.onAlert(getStatusMessage(columnType), 'success');
-      }
+      // The success alert is now handled by `handleStatusChange` in page.tsx.
+      // We can remove the redundant success alert call from here.
+      // if (options.onAlert) {
+      //   options.onAlert(getStatusMessage(columnType), 'success');
+      // }
+
     } catch (error) {
       const err = error instanceof Error ? error : new Error('An unknown error occurred during drag and drop');
       console.error('Drag and drop error:', err);
 
-      // Use the custom alert instead of Sonner
+      // Alert for errors during the drop operation itself.
       if (options.onAlert) {
-        options.onAlert(`Error al actualizar la tarea: ${err.message}`, 'error');
+        options.onAlert(`Error al procesar el arrastre: ${err.message}`, 'error');
       }
 
-      // Call the error handler if provided
+      // Call the generic error handler if provided
       if (options.onError) {
         options.onError(err);
       }

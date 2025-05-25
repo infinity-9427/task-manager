@@ -1,7 +1,7 @@
 'use client'
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { z } from "zod";
-import { RiTimeLine, RiRefreshLine, RiCheckLine } from "@remixicon/react";
+import { useTaskContext } from "../context/TaskContext"; // Import context
 import { useKanbanDragAndDrop, Task, TaskStatus } from "../_hooks/useDragAndDrop";
 import CustomAlert from "@/components/CustomAlert";
 
@@ -34,45 +34,41 @@ const initialCompletada: Task[] = tasksArraySchema.parse([
   { id: "5", title: "Learn C++", description: "Complete C++ tutorial", assignedUser: "Eve", status: "completada" },
 ]);
 
-// Get an icon based on task status
-const getStatusIcon = (status: Task["status"]) => {
-  switch (status) {
-    case "pendiente":
-      return <RiTimeLine size={20} color="#f59e0b" />;
-    case "en progreso":
-      return <RiRefreshLine size={20} color="#3b82f6" />;
-    case "completada":
-      return <RiCheckLine size={20} color="#10b981" />;
-    default:
-      return null;
-  }
-};
-
 const KanbanBoard = () => {
-  // Manage tasks in each column with state
-  const [pendienteTasks, setPendienteTasks] = useState<Task[]>(initialPendiente);
-  const [enProgresoTasks, setEnProgresoTasks] = useState<Task[]>(initialEnProgreso);
-  const [completadaTasks, setCompletadaTasks] = useState<Task[]>(initialCompletada);
+  const { tasks, setTasks } = useTaskContext();
+
+  // Derive tasks for each column from the context
+  const pendienteTasks = tasks.filter(task => task.status === "pendiente");
+  const enProgresoTasks = tasks.filter(task => task.status === "en progreso");
+  const completadaTasks = tasks.filter(task => task.status === "completada");
+
+  // Helper setters that update only the tasks of a given column
+  const setPendienteTasks = (newTasks: Task[]) => {
+    setTasks(prev => [
+      ...prev.filter(task => task.status !== "pendiente"),
+      ...newTasks.map(task => ({ ...task, status: "pendiente" }))
+    ]);
+  };
+  const setEnProgresoTasks = (newTasks: Task[]) => {
+    setTasks(prev => [
+      ...prev.filter(task => task.status !== "en progreso"),
+      ...newTasks.map(task => ({ ...task, status: "en progreso" }))
+    ]);
+  };
+  const setCompletadaTasks = (newTasks: Task[]) => {
+    setTasks(prev => [
+      ...prev.filter(task => task.status !== "completada"),
+      ...newTasks.map(task => ({ ...task, status: "completada" }))
+    ]);
+  };
 
   // For inline edit of task description
   const [editingTask, setEditingTask] = useState<{ id: string; column: TaskStatus } | null>(null);
   const [editedDescription, setEditedDescription] = useState("");
 
-  // Track all tasks in a single array for better management
-  const [allTasks, setAllTasks] = useState<Task[]>([
-    ...initialPendiente,
-    ...initialEnProgreso,
-    ...initialCompletada
-  ]);
-
   // State for CustomAlert
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState<"success" | "error" | "warning">("success");
-
-  // Update all tasks whenever individual columns change
-  useEffect(() => {
-    setAllTasks([...pendienteTasks, ...enProgresoTasks, ...completadaTasks]);
-  }, [pendienteTasks, enProgresoTasks, completadaTasks]);
 
   // Handle status change (API calls, etc.)
   const handleStatusChange = async (taskIds: string[], newStatus: TaskStatus) => {
@@ -84,12 +80,7 @@ const KanbanBoard = () => {
     }
   };
 
-  // Create a new task
-  const handleCreateTask = (newTask: Task) => {
-    setPendienteTasks((prev) => [...prev, newTask]);
-  };
-
-  // Use our custom hook for each column
+  // Use our custom hook for each column with context-derived tasks and setters
   const pendienteColumn = useKanbanDragAndDrop({
     pendienteTasks,
     enProgresoTasks,
@@ -135,8 +126,8 @@ const KanbanBoard = () => {
   // Update the description for a task in the specified column
   const updateTaskDescription = (column: TaskStatus, id: string, newDescription: string) => {
     try {
-      const updater = (tasks: Task[]) =>
-        tasks.map((task) => (task.id === id ? { ...task, description: newDescription } : task));
+      const updater = (tasksColumn: Task[]) =>
+        tasksColumn.map((task) => (task.id === id ? { ...task, description: newDescription } : task));
 
       if (column === "pendiente") setPendienteTasks(updater(pendienteTasks));
       if (column === "en progreso") setEnProgresoTasks(updater(enProgresoTasks));
@@ -234,6 +225,56 @@ const KanbanBoard = () => {
     );
   };
 
+  // Get status icon remains unchanged
+  const getStatusIcon = (status: Task["status"]) => {
+    switch (status) {
+      case "pendiente":
+        return (
+          <span style={{
+            backgroundColor: "#fff7ed", 
+            color: "#9a3412", 
+            border: "1px solid #fdba74",
+            padding: "2px 8px", 
+            borderRadius: "12px", 
+            fontSize: "0.75rem", 
+            fontWeight: 600
+          }}>
+            Pendiente
+          </span>
+        );
+      case "en progreso":
+        return (
+          <span style={{
+            backgroundColor: "#eff6ff", 
+            color: "#1e40af", 
+            border: "1px solid #93c5fd",
+            padding: "2px 8px", 
+            borderRadius: "12px", 
+            fontSize: "0.75rem", 
+            fontWeight: 600
+          }}>
+            En progreso
+          </span>
+        );
+      case "completada":
+        return (
+          <span style={{
+            backgroundColor: "#ecfdf5", 
+            color: "#065f46", 
+            border: "1px solid #6ee7b7",
+            padding: "2px 8px", 
+            borderRadius: "12px", 
+            fontSize: "0.75rem", 
+            fontWeight: 600
+          }}>
+            Completada
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div>
       {/* CustomAlert for success/error messages */}
@@ -254,19 +295,33 @@ const KanbanBoard = () => {
         <div className="kanban-column" style={columnStyle}>
           <h2 style={headerStyle}>Pendiente</h2>
           <ul ref={pendienteColumn.listRef} style={listStyle}>
-            {pendienteColumn.items.map((task) => renderTask(task, "pendiente"))}
+            {pendienteTasks.length === 0 ? (
+              <p style={{ textAlign: "center", color: "#666" }}>No hay tareas pendientes.</p>
+            ) : (
+              pendienteTasks.map((task) => renderTask(task, "pendiente"))
+            )}
           </ul>
         </div>
+        
         <div className="kanban-column" style={columnStyle}>
           <h2 style={headerStyle}>En Progreso</h2>
           <ul ref={enProgresoColumn.listRef} style={listStyle}>
-            {enProgresoColumn.items.map((task) => renderTask(task, "en progreso"))}
+            {enProgresoTasks.length === 0 ? (
+              <p style={{ textAlign: "center", color: "#666" }}>No hay tareas en progreso.</p>
+            ) : (
+              enProgresoTasks.map((task) => renderTask(task, "en progreso"))
+            )}
           </ul>
         </div>
+        
         <div className="kanban-column" style={columnStyle}>
           <h2 style={headerStyle}>Completada</h2>
           <ul ref={completadaColumn.listRef} style={listStyle}>
-            {completadaColumn.items.map((task) => renderTask(task, "completada"))}
+            {completadaTasks.length === 0 ? (
+              <p style={{ textAlign: "center", color: "#666" }}>No hay tareas completadas.</p>
+            ) : (
+              completadaTasks.map((task) => renderTask(task, "completada"))
+            )}
           </ul>
         </div>
       </div>
