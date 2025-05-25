@@ -1,3 +1,21 @@
+# Task Manager
+
+![Task Manager Logo](./public/logo.webp)
+
+A powerful and intuitive task management application built with Next.js that helps you organize your work and boost productivity.
+
+## Features
+
+- **Task Management**: Create, edit, delete, and mark tasks as complete
+- **Priority Levels**: Set task importance with color-coded priority indicators
+- **Due Dates**: Add deadlines to your tasks with reminder notifications
+- **Categories & Tags**: Organize tasks by project, context, or custom categories
+- **Filtering & Sorting**: Find tasks quickly with advanced filtering options
+- **Responsive Design**: Works seamlessly across desktop, tablet, and mobile devices
+- **User Authentication**: Secure login to keep your tasks private
+- **Dark/Light Mode**: Switch between themes for comfortable viewing
+- **Drag & Drop**: Intuitive interface to reorder tasks and change priorities
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
