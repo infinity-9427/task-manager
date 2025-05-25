@@ -9,19 +9,25 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@formkit/drag-and-drop": "^0.5.3",
+    "@remixicon/react": "^4.6.0",
+    "clsx": "^2.1.1",
+    "next": "15.1.8",
+    "next-intl": "^4.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "next": "15.1.8"
+    "sonner": "^2.0.3",
+    "zod": "^3.25.28"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
     "eslint": "^9",
     "eslint-config-next": "15.1.8",
-    "@eslint/eslintrc": "^3"
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
   }
 }
