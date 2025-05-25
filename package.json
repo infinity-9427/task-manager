@@ -9,8 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@formkit/drag-and-drop": "^0.5.3",
-    "@remixicon/react": "^4.6.0",
     "clsx": "^2.1.1",
     "next": "15.1.8",
     "react": "^19.0.0",

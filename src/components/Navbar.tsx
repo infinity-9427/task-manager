@@ -2,13 +2,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  RiSearchLine,
-  RiAddLine,
-  RiUser3Line,
-  RiMenuLine,
-  RiCloseLine,
-} from "@remixicon/react";
 import CreateTaskForm from "./CreateTaskForm";
 
 interface NavbarProps {
@@ -18,7 +11,6 @@ interface NavbarProps {
 const Navbar = ({ onCreateTask }: NavbarProps) => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showTaskForm, setShowTaskForm] = useState(false);
 
   const handleSearchFocus = () => setIsSearchFocused(true);
@@ -32,8 +24,6 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
     }
     setShowTaskForm(false);
   };
-
-  const toggleMobileMenu = () => setShowMobileMenu(!showMobileMenu);
 
   return (
     <>
@@ -49,23 +39,22 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
                 height={32}
                 className="mr-2"
               />
-              <span className="hidden md:block text-lg font-semibold">
+              <span className="hidden sm:block text-lg font-semibold">
                 Task Manager
               </span>
             </Link>
           </div>
 
-          {/* Search Bar - Desktop */}
+          {/* Search Bar - Now visible on all devices, but smaller on mobile */}
           <div
-            className={`hidden md:flex items-center bg-gray-800 rounded-md px-3 py-2 flex-1 mx-4 max-w-xl border ${
+            className={`flex items-center bg-gray-800 rounded-md px-3 py-2 flex-1 mx-2 sm:mx-4 max-w-xl border ${
               isSearchFocused ? "border-blue-400" : "border-transparent"
             }`}
           >
-            <RiSearchLine className="text-gray-400 mr-2" />
             <input
               type="text"
               placeholder="Search tasks..."
-              className="bg-transparent border-none outline-none text-white placeholder-gray-400 w-full"
+              className="bg-transparent border-none outline-none text-white placeholder-gray-400 w-full text-sm sm:text-base"
               value={searchQuery}
               onChange={handleSearchChange}
               onFocus={handleSearchFocus}
@@ -74,82 +63,23 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
           </div>
 
           {/* Right side icons */}
-          <div className="flex items-center">
-            {/* Add Task Button */}
+          <div className="flex items-center ml-2 sm:ml-4">
+            {/* Improved Add Task Button with better responsiveness */}
             <button
               onClick={() => setShowTaskForm(true)}
-              className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 md:px-3 md:py-2 rounded-md transition-colors mr-2 md:mr-4"
+              className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 sm:px-3 sm:py-2 rounded-md transition-colors"
+              aria-label="Add new task"
             >
-              <RiAddLine className="mr-0 md:mr-1" />
-              <span className="hidden md:inline">Task</span>
+              <span className="text-lg sm:mr-1">+</span>
+              <span className="hidden sm:inline">Task</span>
             </button>
 
             {/* Profile Icon */}
-            <button className="p-1.5 rounded-full hover:bg-gray-700 transition-colors">
-              <RiUser3Line size={20} />
-            </button>
-
-            {/* Mobile Menu Button */}
-            <button
-              className="ml-3 md:hidden p-1.5 rounded hover:bg-gray-700"
-              onClick={toggleMobileMenu}
-            >
-              <RiMenuLine size={20} />
+            <button className="p-1.5 rounded-full hover:bg-gray-700 transition-colors ml-3" aria-label="User profile">
+              <span className="text-lg">&#128100;</span> {/* User icon */}
             </button>
           </div>
         </div>
-
-        {/* Mobile Search - Shown below navbar on mobile */}
-        <div className="md:hidden mt-3">
-          <div
-            className={`flex items-center bg-gray-800 rounded-md px-3 py-2 border ${
-              isSearchFocused ? "border-blue-400" : "border-transparent"
-            }`}
-          >
-            <RiSearchLine className="text-gray-400 mr-2" />
-            <input
-              type="text"
-              placeholder="Search tasks..."
-              className="bg-transparent border-none outline-none text-white placeholder-gray-400 w-full"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onFocus={handleSearchFocus}
-              onBlur={handleSearchBlur}
-            />
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {showMobileMenu && (
-          <div className="md:hidden mt-3 bg-gray-800 rounded-md p-4 animate-fadeIn">
-            <div className="space-y-3">
-              <Link
-                href="/"
-                className="block px-2 py-1 hover:bg-gray-700 rounded-md"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/tasks"
-                className="block px-2 py-1 hover:bg-gray-700 rounded-md"
-              >
-                All Tasks
-              </Link>
-              <Link
-                href="/profile"
-                className="block px-2 py-1 hover:bg-gray-700 rounded-md"
-              >
-                Profile
-              </Link>
-              <Link
-                href="/settings"
-                className="block px-2 py-1 hover:bg-gray-700 rounded-md"
-              >
-                Settings
-              </Link>
-            </div>
-          </div>
-        )}
       </nav>
 
       {/* Task Creation Form */}
@@ -157,12 +87,13 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Crear Nueva Tarea</h2>
+              <h2 className="text-xl font-semibold">Crear Tarea</h2>
               <button
                 className="text-gray-500 hover:text-gray-700"
                 onClick={() => setShowTaskForm(false)}
+                aria-label="Close form"
               >
-                <RiCloseLine size={24} />
+                <span className="text-2xl">&times;</span> 
               </button>
             </div>
             <CreateTaskForm onCreate={handleTaskCreated} />
