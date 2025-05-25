@@ -1,4 +1,7 @@
-import { Metadata } from 'next'
+import { Metadata } from 'next';
+import Navbar from '../../components/Navbar';
+import '../global.css';
+import { TaskProvider } from '@/app/context/TaskContext';
 
 export const metadata: Metadata = {
   title: 'Task Manager',
@@ -27,7 +30,7 @@ export const metadata: Metadata = {
     description: 'Manage your tasks efficiently',
     images: ['/logo.webp'],
   },
-}
+};
 
 export default function DashboardLayout({
   children,
@@ -35,10 +38,15 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body>
-        <main>{children}</main>
+    <html lang="en" className="h-full">
+      <body className="min-h-screen bg-gray-50 flex flex-col">
+        <TaskProvider>
+          <Navbar />
+          <main className="flex-1">
+            {children}
+          </main>
+        </TaskProvider>
       </body>
     </html>
-  )
+  );
 }
