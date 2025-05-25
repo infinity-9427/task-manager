@@ -292,10 +292,7 @@ const KanbanBoard = () => {
         </div>
       )}
 
-      <div
-        className="kanban-board"
-        style={{ display: "flex", gap: "1rem", flexWrap: "wrap", padding: "0 1rem" }}
-      >
+      <div className="kanban-board" style={{ display: "flex", gap: "1rem", flexWrap: "wrap", padding: "0 1rem" }}>
         <div className="kanban-column" style={columnStyle}>
           <h2 style={headerStyle}>Pendiente</h2>
           <ul ref={pendienteColumn.listRef} style={listStyle}>
