@@ -19,35 +19,35 @@ const KanbanBoard = () => {
   
   // String comparison for enum values with spaces can be tricky
   // Let's make sure we're comparing exactly what we expect
-  const pendienteTasks = tasks.filter(task => 
+  const pendingTasks = tasks.filter(task => 
     task && task.status === TaskStatus.PENDING
   );
-  const enProgresoTasks = tasks.filter(task => 
+  const inProgressTasks = tasks.filter(task => 
     task && task.status === TaskStatus.IN_PROGRESS
   );
-  const completadaTasks = tasks.filter(task => 
+  const completedTasks = tasks.filter(task => 
     task && task.status === TaskStatus.COMPLETED
   );
   
   console.log('Filtered tasks:', {
-    pending: pendienteTasks,
-    inProgress: enProgresoTasks,
-    completed: completadaTasks
+    pending: pendingTasks,
+    inProgress: inProgressTasks,
+    completed: completedTasks
   });
 
-  const setPendienteTasks = (newTasks: Task[]) => {
+  const setpendingTasks = (newTasks: Task[]) => {
     setTasks(prev => [
       ...prev.filter(task => task.status !== TaskStatus.PENDING),
       ...newTasks.map(task => ({ ...task, status: TaskStatus.PENDING as TaskStatus }))
     ]);
   };
-  const setEnProgresoTasks = (newTasks: Task[]) => {
+  const setinProgressTasks = (newTasks: Task[]) => {
     setTasks(prev => [
       ...prev.filter(task => task.status !== TaskStatus.IN_PROGRESS),
       ...newTasks.map(task => ({ ...task, status: TaskStatus.IN_PROGRESS as TaskStatus }))
     ]);
   };
-  const setCompletadaTasks = (newTasks: Task[]) => {
+  const setcompletedTasks = (newTasks: Task[]) => {
     setTasks(prev => [
       ...prev.filter(task => task.status !== TaskStatus.COMPLETED),
       ...newTasks.map(task => ({ ...task, status: TaskStatus.COMPLETED as TaskStatus }))
@@ -91,12 +91,12 @@ const KanbanBoard = () => {
   };
 
   const pendienteColumn = useKanbanDragAndDrop({
-    pendienteTasks,
-    enProgresoTasks,
-    completadaTasks,
-    setPendienteTasks,
-    setEnProgresoTasks,
-    setCompletadaTasks,
+    pendingTasks,
+    inProgressTasks,
+    completedTasks,
+    setpendingTasks,
+    setinProgressTasks,
+    setcompletedTasks,
     columnType: TaskStatus.PENDING,
     options: {
       onStatusChange: handleStatusChange,
@@ -113,12 +113,12 @@ const KanbanBoard = () => {
   });
 
   const enProgresoColumn = useKanbanDragAndDrop({
-    pendienteTasks,
-    enProgresoTasks,
-    completadaTasks,
-    setPendienteTasks,
-    setEnProgresoTasks,
-    setCompletadaTasks,
+    pendingTasks,
+    inProgressTasks,
+    completedTasks,
+    setpendingTasks,
+    setinProgressTasks,
+    setcompletedTasks,
     columnType: TaskStatus.IN_PROGRESS,
     options: {
       onStatusChange: handleStatusChange,
@@ -135,12 +135,12 @@ const KanbanBoard = () => {
   });
 
   const completadaColumn = useKanbanDragAndDrop({
-    pendienteTasks,
-    enProgresoTasks,
-    completadaTasks,
-    setPendienteTasks,
-    setEnProgresoTasks,
-    setCompletadaTasks,
+    pendingTasks,
+    inProgressTasks,
+    completedTasks,
+    setpendingTasks,
+    setinProgressTasks,
+    setcompletedTasks,
     columnType: TaskStatus.COMPLETED,
     options: {
       onStatusChange: handleStatusChange,
@@ -161,9 +161,9 @@ const KanbanBoard = () => {
       const updater = (tasksColumn: Task[]) =>
         tasksColumn.map((task) => (task.id === id ? { ...task, description: newDescription } : task));
 
-      if (column === TaskStatus.PENDING) setPendienteTasks(updater(pendienteTasks));
-      if (column === TaskStatus.IN_PROGRESS) setEnProgresoTasks(updater(enProgresoTasks));
-      if (column === TaskStatus.COMPLETED) setCompletadaTasks(updater(completadaTasks));
+      if (column === TaskStatus.PENDING) setpendingTasks(updater(pendingTasks));
+      if (column === TaskStatus.IN_PROGRESS) setinProgressTasks(updater(inProgressTasks));
+      if (column === TaskStatus.COMPLETED) setcompletedTasks(updater(completedTasks));
 
       setEditingTask(null);
       setAlertMessage("Descripción actualizada");
@@ -295,10 +295,10 @@ const KanbanBoard = () => {
 
   useEffect(() => {
     console.log('Current tasks in context:', tasks);
-    console.log('Pendiente tasks:', pendienteTasks);
-    console.log('En Progreso tasks:', enProgresoTasks);
-    console.log('Completada tasks:', completadaTasks);
-  }, [tasks, pendienteTasks, enProgresoTasks, completadaTasks]);
+    console.log('Pendiente tasks:', pendingTasks);
+    console.log('En Progreso tasks:', inProgressTasks);
+    console.log('Completada tasks:', completedTasks);
+  }, [tasks, pendingTasks, inProgressTasks, completedTasks]);
 
 
   return (
@@ -318,21 +318,39 @@ const KanbanBoard = () => {
         <div className="kanban-column" style={columnStyle}>
           <h2 style={headerStyle}>Pendiente</h2>
           <ul ref={pendienteColumn.listRef} style={listStyle}>
-            {pendienteTasks.map((task) => renderTask(task, TaskStatus.PENDING))}
+            {pendingTasks.length > 0 ? (
+              pendingTasks.map((task) => renderTask(task, TaskStatus.PENDING))
+            ) : (
+              <div style={{ textAlign: 'center', padding: '1rem', color: '#666', fontStyle: 'italic' }}>
+                No pending tasks
+              </div>
+            )}
           </ul>
         </div>
         
         <div className="kanban-column" style={columnStyle}>
           <h2 style={headerStyle}>En Progreso</h2>
           <ul ref={enProgresoColumn.listRef} style={listStyle}>
-            {enProgresoTasks.map((task) => renderTask(task, TaskStatus.IN_PROGRESS))}
+            {inProgressTasks.length > 0 ? (
+              inProgressTasks.map((task) => renderTask(task, TaskStatus.IN_PROGRESS))
+            ) : (
+              <div style={{ textAlign: 'center', padding: '1rem', color: '#666', fontStyle: 'italic' }}>
+                No tasks in progress
+              </div>
+            )}
           </ul>
         </div>
         
         <div className="kanban-column" style={columnStyle}>
           <h2 style={headerStyle}>Completada</h2>
           <ul ref={completadaColumn.listRef} style={listStyle}>
-            {completadaTasks.map((task) => renderTask(task, TaskStatus.COMPLETED))}
+            {completedTasks.length > 0 ? (
+              completedTasks.map((task) => renderTask(task, TaskStatus.COMPLETED)) 
+            ) : (
+              <div style={{ textAlign: 'center', padding: '1rem', color: '#666', fontStyle: 'italic' }}>
+                No completed tasks
+              </div>
+            )}
           </ul>
         </div>
       </div>
