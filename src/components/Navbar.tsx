@@ -2,13 +2,16 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import CreateTaskForm from "./CreateTaskForm";
+import CustomTaskForm from "./CustomTaskForm";
+import { Task } from '@/app/shared/types/tasks';
 
 interface NavbarProps {
   onCreateTask?: (task: any) => void;
 }
 
 const Navbar = ({ onCreateTask }: NavbarProps) => {
+  const [showForm, setShowForm] = useState(false);
+  const [currentTask, setCurrentTask] = useState<Task | undefined>(undefined);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showTaskForm, setShowTaskForm] = useState(false);
@@ -75,7 +78,10 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
             </button>
 
             {/* Profile Icon */}
-            <button className="p-1.5 rounded-full hover:bg-gray-700 transition-colors ml-3" aria-label="User profile">
+            <button
+              className="p-1.5 rounded-full hover:bg-gray-700 transition-colors ml-3"
+              aria-label="User profile"
+            >
               <span className="text-lg">&#128100;</span> {/* User icon */}
             </button>
           </div>
@@ -87,16 +93,19 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Crear Tarea</h2>
               <button
                 className="text-gray-500 hover:text-gray-700"
                 onClick={() => setShowTaskForm(false)}
                 aria-label="Close form"
               >
-                <span className="text-2xl">&times;</span> 
+                <span className="text-2xl">&times;</span>
               </button>
             </div>
-            <CreateTaskForm onCreate={handleTaskCreated} />
+            <CustomTaskForm
+              task={currentTask}
+              onComplete={handleTaskCreated}
+              onClose={() => setShowForm(false)}
+            />
           </div>
         </div>
       )}

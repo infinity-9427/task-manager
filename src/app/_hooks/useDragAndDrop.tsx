@@ -1,13 +1,5 @@
 import { useState } from 'react';
-
-interface UseDragAndDropOptions<TItem, TDestination> {
-  // Function to call when an item is dropped
-  onDropItem: (itemId: string, destination: TDestination) => Promise<void> | void;
-  // Optional loading delay for API calls or animations
-  loadingDelay?: number;
-  // Optional error handler
-  onError?: (error: unknown) => void;
-}
+import { UseDragAndDropOptions } from '@/app/shared/types/tasks';
 
 export function useDragAndDrop<TItem = any, TDestination = any>(
   options: UseDragAndDropOptions<TItem, TDestination>

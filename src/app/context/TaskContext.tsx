@@ -6,6 +6,7 @@ const TaskContext = createContext<TaskContextValue>({
   tasks: [],
   setTasks: () => {},
   addTask: () => {},
+  updateTask: () => {},
   updateTaskStatus: () => {}
 });
 
@@ -36,6 +37,16 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setTasks(currentTasks => [...currentTasks, newTask]);
   };
 
+  const updateTask = (taskId: string, taskData: Omit<Task, 'id'>) => {
+    setTasks(currentTasks =>
+      currentTasks.map(task =>
+        task.id === taskId
+          ? { ...task, ...taskData }
+          : task
+      )
+    );
+  };
+
   const updateTaskStatus = (taskId: string, newStatus: TaskStatus) => {
     setTasks(currentTasks => 
       currentTasks.map(task => 
@@ -47,7 +58,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <TaskContext.Provider value={{ tasks, setTasks, addTask, updateTaskStatus }}>
+    <TaskContext.Provider value={{ tasks, setTasks, addTask, updateTask, updateTaskStatus }}>
       {children}
     </TaskContext.Provider>
   );
