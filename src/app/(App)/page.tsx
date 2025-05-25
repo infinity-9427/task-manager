@@ -2,12 +2,22 @@
 import { useTaskContext } from '@/app/context/TaskContext';
 import { TaskStatus, Task } from '@/app/shared/types/tasks';
 import { useState, useRef, useEffect } from 'react';
+import { useDragAndDrop } from '@/app/_hooks/useDragAndDrop';
 
 export default function TaskBoard() {
   const { tasks, updateTaskStatus, setTasks } = useTaskContext();
-  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  // Initialize drag and drop hook
+  const dragDrop = useDragAndDrop<Task, TaskStatus>({
+    onDropItem: async (taskId, newStatus) => {
+      // This function will be called when a task is dropped
+      // We can directly use updateTaskStatus from context here
+      updateTaskStatus(taskId, newStatus);
+    },
+    loadingDelay: 300, // Match the existing delay
+    onError: (error) => console.error("Error updating task status:", error)
+  });
+  
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const editFormRef = useRef<HTMLDivElement>(null);
 
@@ -26,38 +36,6 @@ export default function TaskBoard() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [editFormRef]);
-
-  // Handle drag and drop with API integration preparation
-  const handleDragStart = (taskId: string) => {
-    setDraggedTaskId(taskId);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = async (newStatus: TaskStatus) => {
-    if (draggedTaskId) {
-      try {
-        // Set loading state for the task being updated
-        setIsLoading(prev => ({ ...prev, [draggedTaskId]: true }));
-        
-        // Simulate API call delay
-        // In a real app, you would replace this with your API call
-        // await updateTaskStatusAPI(draggedTaskId, newStatus);
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // Update task status in context
-        updateTaskStatus(draggedTaskId, newStatus);
-      } catch (error) {
-        console.error("Error updating task status:", error);
-        // Handle error (show notification etc.)
-      } finally {
-        setIsLoading(prev => ({ ...prev, [draggedTaskId]: false }));
-        setDraggedTaskId(null);
-      }
-    }
-  };
 
   // Delete task handler
   const handleDeleteTask = (taskId: string) => {
@@ -158,7 +136,7 @@ export default function TaskBoard() {
   const TaskCard = ({ task }: { task: Task }) => {
     const isBeingEdited = editingTask?.id === task.id;
     const isConfirmingDelete = deleteConfirm === task.id;
-    const isTaskLoading = isLoading[task.id];
+    const isTaskLoading = dragDrop.isLoading[task.id];
     
     // Define status colors - improved for better visibility
     const statusColors = {
@@ -170,7 +148,7 @@ export default function TaskBoard() {
     return (
       <div 
         draggable={!isBeingEdited && !isConfirmingDelete}
-        onDragStart={() => handleDragStart(task.id)}
+        onDragStart={() => dragDrop.handleDragStart(task.id)}
         className={`bg-white rounded-lg shadow-md p-4 mb-3 relative ${
           isTaskLoading ? 'opacity-60' : 'hover:shadow-lg'
         } transition-all border border-gray-100 hover:border-gray-200 ${
@@ -226,8 +204,7 @@ export default function TaskBoard() {
     status, 
     bgColor,
     borderColor,
-    iconClass,
-    onDrop
+    iconClass
   }: { 
     title: string; 
     tasks: Task[]; 
@@ -235,23 +212,17 @@ export default function TaskBoard() {
     bgColor: string;
     borderColor: string;
     iconClass: string;
-    onDrop: (status: TaskStatus) => Promise<void>;
   }) => {
-    const [isColumnDragTarget, setIsColumnDragTarget] = useState(false);
+    // Create unique ID for this column
+    const columnId = `column-${status}`;
     
     return (
       <div 
         className={`${bgColor} rounded-lg shadow-md p-4 flex-1 min-w-[300px] border ${borderColor} 
-        ${isColumnDragTarget ? 'ring-2 ring-indigo-400' : ''} transition-all`}
-        onDragOver={(e) => {
-          handleDragOver(e);
-          setIsColumnDragTarget(true);
-        }}
-        onDragLeave={() => setIsColumnDragTarget(false)}
-        onDrop={() => {
-          onDrop(status);
-          setIsColumnDragTarget(false);
-        }}
+        ${dragDrop.isDraggedOver(columnId) ? 'ring-2 ring-indigo-400' : ''} transition-all`}
+        onDragOver={(e) => dragDrop.handleDragOver(e, columnId)}
+        onDragLeave={() => dragDrop.handleDragLeave(columnId)}
+        onDrop={() => dragDrop.handleDrop(status, columnId)}
       >
         <h2 className="font-bold text-lg mb-4 flex items-center justify-between text-gray-800 border-b pb-2">
           <span className="flex items-center">
@@ -294,7 +265,6 @@ export default function TaskBoard() {
             bgColor="bg-amber-50"
             borderColor="border-amber-200"
             iconClass="fas fa-list-ul text-amber-600"
-            onDrop={handleDrop}
           />
           
           <Column 
@@ -304,7 +274,6 @@ export default function TaskBoard() {
             bgColor="bg-blue-50"
             borderColor="border-blue-200"
             iconClass="fas fa-spinner text-blue-600"
-            onDrop={handleDrop}
           />
           
           <Column 
@@ -314,7 +283,6 @@ export default function TaskBoard() {
             bgColor="bg-emerald-50"
             borderColor="border-emerald-200"
             iconClass="fas fa-check-circle text-emerald-600"
-            onDrop={handleDrop}
           />
         </div>
       </div>
