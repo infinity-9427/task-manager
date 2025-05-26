@@ -102,12 +102,18 @@ export default function TaskForm({
         onComplete(tempTask);
       }
 
-      setAlertMessage("¡Tarea creada exitosamente!");
+      // Close form immediately for create action
+      if (onClose) {
+        onClose();
+      }
+      
+      // Reset form data in case form isn't closed
       setFormData({
         title: "",
         description: "",
         status: TaskStatus.PENDING,
       });
+      
     } else if (action === formAction.EDIT && task) {
       // Update existing task
       updateTask(task.id, taskData);
@@ -124,17 +130,9 @@ export default function TaskForm({
       if (onClose) {
         onClose();
       }
-      return; // Exit early to avoid setting alert message and timeout
     }
 
-    setAlertType("success");
     setErrors({});
-
-    setTimeout(() => {
-      if (onClose) {
-        onClose();
-      }
-    }, 1500);
   };
 
    const colorSchemeHelper = (action: string): IColorSchema => {
@@ -321,16 +319,6 @@ export default function TaskForm({
           <h2 className={`text-xl font-bold mb-4 ${scheme.titleColor}`}>
             Crear Nueva Tarea
           </h2>
-
-          {alertMessage && (
-            <div className="mb-4">
-              <CustomAlert
-                message={alertMessage}
-                type={alertType}
-                onClose={() => setAlertMessage("")}
-              />
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>

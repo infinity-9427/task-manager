@@ -1,10 +1,11 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import CustomTaskForm from "./CustomTaskForm";
 import AuthModal from "./AuthModal";
-import TaskModal from "./TaskModal"; // Add this import at the top
+import TaskModal from "./TaskModal";
+import SearchBar from "./SearchBar"; // Import the new SearchBar component
 import { Task } from '@/app/shared/types/tasks';
 import { useTaskContext } from "@/app/context/TaskContext";
 
@@ -20,18 +21,13 @@ interface NavbarProps {
 }
 
 const Navbar = ({ onCreateTask }: NavbarProps) => {
-  const { tasks } = useTaskContext(); // Get tasks from context
+  const { tasks } = useTaskContext();
   const [currentTask, setCurrentTask] = useState<Task | undefined>(undefined);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
-  const [searchResults, setSearchResults] = useState<Task[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null); // Add state for selected task ID
-  const searchRef = useRef<HTMLDivElement>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   // Check authentication state from cookies on component mount
   useEffect(() => {
@@ -57,69 +53,17 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
     }
-
-    // Add click event listener to close suggestions when clicking outside
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
   }, []);
-
-  // Update search results when search query or tasks change
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setSearchResults([]);
-      return;
-    }
-
-    const filteredTasks = tasks.filter(task => 
-      task.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      task.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    setSearchResults(filteredTasks);
-  }, [searchQuery, tasks]);
-
-  const handleSearchFocus = () => {
-    setIsSearchFocused(true);
-    if (searchQuery.trim() !== '') {
-      setShowSuggestions(true);
-    }
-  };
-
-  const handleSearchBlur = () => {
-    setIsSearchFocused(false);
-    // Don't hide suggestions immediately to allow clicking on them
-    setTimeout(() => {
-      if (!searchRef.current?.contains(document.activeElement)) {
-        setShowSuggestions(false);
-      }
-    }, 200);
-  };
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    setShowSuggestions(value.trim() !== '');
-  };
-
-  const handleSuggestionClick = (task: Task) => {
-    setSearchQuery(task.title);
-    setShowSuggestions(false);
-    setSelectedTaskId(task.id); // Open the modal with the selected task
-  };
 
   const handleTaskCreated = (task: any) => {
     if (onCreateTask) {
       onCreateTask(task);
     }
-    setShowTaskForm(false);
+    // Only close the form if it's an edit operation or explicitly requested
+    // For new task creation, keep the form open so users can add multiple tasks
+    if (task && task.id && !task.id.toString().startsWith('temp-')) {
+      setShowTaskForm(false);
+    }
   };
   
   const handleTaskButtonClick = () => {
@@ -187,66 +131,11 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
             </Link>
           </div>
 
-          {/* Search Bar */}
-          <div
-            ref={searchRef}
-            className={`flex-1 mx-2 sm:mx-4 max-w-xl relative ${
-              showSuggestions && searchResults.length > 0 ? 'z-10' : ''
-            }`}
-          >
-            <div
-              className={`flex items-center bg-gray-800 rounded-md px-3 py-2 border ${
-                isSearchFocused ? "border-blue-400" : "border-transparent"
-              }`}
-            >
-              <input
-                type="text"
-                placeholder="Buscar tareas..."
-                className="bg-transparent border-none outline-none text-white placeholder-gray-400 w-full text-sm sm:text-base"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                onFocus={handleSearchFocus}
-                onBlur={handleSearchBlur}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="text-gray-400 hover:text-white ml-2"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-            
-            {/* Search Suggestions */}
-            {showSuggestions && searchResults.length > 0 && (
-              <div className="absolute mt-1 w-full bg-gray-800 rounded-md shadow-lg border border-gray-700 overflow-hidden animate-fadeIn">
-                <ul>
-                  {searchResults.map((task) => (
-                    <li
-                      key={task.id}
-                      className="px-4 py-2 hover:bg-gray-700 cursor-pointer border-b border-gray-700 last:border-0"
-                      onClick={() => handleSuggestionClick(task)}
-                    >
-                      <div className="font-medium">{task.title}</div>
-                      {task.description && (
-                        <div className="text-sm text-gray-400 truncate">{task.description}</div>
-                      )}
-                      <div className="text-xs mt-1">
-                        <span className={`px-2 py-0.5 rounded-full ${
-                          task.status === 'PENDING' ? 'bg-yellow-800 text-yellow-200' :
-                          task.status === 'IN_PROGRESS' ? 'bg-blue-800 text-blue-200' : 
-                          'bg-green-800 text-green-200'
-                        }`}>
-                          {task.status.replace('_', ' ')}
-                        </span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
+          {/* Search Bar Component */}
+          <SearchBar 
+            onTaskSelect={setSelectedTaskId}
+            className="flex-1 mx-2 sm:mx-4 max-w-xl"
+          />
 
           {/* Right side icons */}
           <div className="flex items-center ml-2 sm:ml-4">
@@ -294,9 +183,18 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
 
       {/* Task Creation Form */}
       {showTaskForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+          onClick={(e) => {
+            // Only close if clicking directly on the backdrop
+            if (e.target === e.currentTarget) {
+              setShowTaskForm(false);
+            }
+          }}
+        >
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-800">Nueva Tarea</h2>
               <button
                 className="text-gray-500 hover:text-gray-700"
                 onClick={() => setShowTaskForm(false)}
@@ -331,23 +229,6 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
           onClose={() => setSelectedTaskId(null)}
         />
       )}
-
-      {/* Animation styles */}
-      <style jsx global>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.2s ease-out;
-        }
-      `}</style>
     </>
   );
 };
