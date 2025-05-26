@@ -1,6 +1,6 @@
 "use client";
 import { useTaskContext } from "@/app/context/TaskContext";
-import { TaskStatus, Task, formAction } from "@/app/shared/types/tasks";
+import { TaskStatus, Task, formAction, Priority } from "@/app/shared/types/tasks";
 import { useState } from "react";
 import { useDragAndDrop } from "@/app/_hooks/useDragAndDrop";
 import { useFetcher } from "@/app/_hooks/useFetcher";
@@ -98,6 +98,13 @@ export default function TaskBoard() {
         "bg-emerald-200 text-emerald-900 border-emerald-300",
     };
 
+    const priorityColors = {
+      [Priority.LOW]: "bg-green-100 text-green-800 border-green-200",
+      [Priority.MEDIUM]: "bg-amber-100 text-amber-800 border-amber-200",
+      [Priority.HIGH]: "bg-pink-100 text-pink-800 border-pink-200",
+      [Priority.URGENT]: "bg-purple-100 text-purple-800 border-purple-200",
+    };
+
     const getStatusLabel = (status: TaskStatus): string => {
       switch (status) {
         case TaskStatus.PENDING:
@@ -111,15 +118,32 @@ export default function TaskBoard() {
       }
     };
 
+    const getPriorityLabel = (priority?: Priority): string => {
+      if (!priority) return "";
+      
+      switch (priority) {
+        case Priority.LOW:
+          return "Baja";
+        case Priority.MEDIUM:
+          return "Media";
+        case Priority.HIGH:
+          return "Alta";
+        case Priority.URGENT:
+          return "Urgente";
+        default:
+          return "";
+      }
+    };
+
     return (
-<div
-  draggable={!isBeingEdited}
-  onDragStart={() => dragDrop.handleDragStart(task.id)}
-  onDragEnd={dragDrop.handleDragEnd}
-  className={`bg-white rounded-lg shadow-md p-4 mb-3 relative ${
-    isTaskLoading ? "opacity-60" : "hover:shadow-lg"
-  } transition-all border border-gray-100 hover:border-gray-200`}
->
+      <div
+        draggable={!isBeingEdited}
+        onDragStart={() => dragDrop.handleDragStart(task.id)}
+        onDragEnd={dragDrop.handleDragEnd}
+        className={`bg-white rounded-lg shadow-md p-4 mb-3 relative ${
+          isTaskLoading ? "opacity-60" : "hover:shadow-lg"
+        } transition-all border border-gray-100 hover:border-gray-200`}
+      >
         {isTaskLoading && (
           <div className="absolute inset-0 bg-white bg-opacity-30 flex items-center justify-center rounded-lg">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -141,21 +165,35 @@ export default function TaskBoard() {
             <button
               onClick={() => handleDeleteTask(task)}
               className="text-gray-500 hover:text-red-600 hover:bg-gray-100 p-1 rounded"
-              title="Eiminar Tarea"
+              title="Eliminar Tarea"
             >
-              <img src="/delete.svg" alt="Eiminar Tarea" className="w-4 h-4" />
+              <img src="/delete.svg" alt="Eliminar Tarea" className="w-4 h-4" />
             </button>
           </div>
         </div>
 
         <p className="text-gray-700 text-sm mb-3">{task.description}</p>
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-medium ${
-            statusColors[task.status]
-          } border`}
-        >
-          {getStatusLabel(task.status)}
-        </span>
+        
+        <div className="flex flex-col gap-2">
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-medium ${
+              statusColors[task.status]
+            } border inline-flex items-center w-fit`}
+          >
+            {getStatusLabel(task.status)}
+          </span>
+          
+          {task.priority && (
+            <span 
+              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                priorityColors[task.priority]
+              } border inline-flex items-center gap-1 w-fit`}
+            >
+              <img src="/flag.svg" alt="Priority" className="w-3 h-3" />
+              {getPriorityLabel(task.priority)}
+            </span>
+          )}
+        </div>
       </div>
     );
   };

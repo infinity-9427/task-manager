@@ -21,6 +21,7 @@ const taskFormSchema = z.object({
     .default(TaskStatus.PENDING),
   priority: z
     .enum([Priority.LOW, Priority.MEDIUM, Priority.HIGH, Priority.URGENT])
+    .nullable() // Add this to properly handle null values
     .optional(),
 });
 
@@ -79,7 +80,7 @@ export default function TaskForm({
     setFormData((prev) => ({ ...prev, status: newStatus }));
   };
 
-  const handlePriorityChange = (newPriority: Priority) => {
+  const handlePriorityChange = (newPriority: Priority | null) => {
     setFormData((prev) => ({ ...prev, priority: newPriority }));
   };
 
@@ -97,11 +98,11 @@ export default function TaskForm({
       return;
     }
 
-    const taskData = {
+    const taskData: any = {
       title: formData.title,
       description: formData.description || "",
       status: formData.status as TaskStatus,
-      priority: formData.priority, 
+      priority: formData.priority // Always include priority, even if null
     };
 
     if (action === formAction.CREATE) {
@@ -200,29 +201,45 @@ export default function TaskForm({
     if (formData.priority === priority) {
       switch (priority) {
         case Priority.LOW:
-          return "bg-blue-500 text-white shadow-md";
+          return "bg-green-600 text-white shadow-md"; // Changed from blue to green
         case Priority.MEDIUM:
-          return "bg-yellow-500 text-white shadow-md";
+          return "bg-amber-500 text-white shadow-md"; // Changed from yellow to amber
         case Priority.HIGH:
-          return "bg-orange-500 text-white shadow-md";
+          return "bg-pink-600 text-white shadow-md"; // Changed from orange to pink
         case Priority.URGENT:
-          return "bg-red-600 text-white shadow-md";
+          return "bg-purple-800 text-white shadow-md"; // Changed from red to deep purple
         default:
           return "bg-gray-600 text-white shadow-md";
       }
     } else {
       switch (priority) {
         case Priority.LOW:
-          return "bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-300";
+          return "bg-green-50 text-green-800 hover:bg-green-100 border border-green-300"; // Green theme
         case Priority.MEDIUM:
-          return "bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border border-yellow-300";
+          return "bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-300"; // Amber theme
         case Priority.HIGH:
-          return "bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-300";
+          return "bg-pink-50 text-pink-800 hover:bg-pink-100 border border-pink-300"; // Pink theme
         case Priority.URGENT:
-          return "bg-red-50 text-red-700 hover:bg-red-100 border border-red-300";
+          return "bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-300"; // Deep purple theme
         default:
           return "bg-gray-100 text-gray-800 hover:bg-gray-200 border border-gray-300";
       }
+    }
+  };
+
+  // Add this helper function for priority labels in Spanish
+  const getPriorityLabel = (priority: Priority): string => {
+    switch (priority) {
+      case Priority.LOW:
+        return "Baja";
+      case Priority.MEDIUM:
+        return "Media";
+      case Priority.HIGH:
+        return "Alta";
+      case Priority.URGENT:
+        return "Urgente";
+      default:
+        return "";
     }
   };
 
@@ -343,6 +360,7 @@ export default function TaskForm({
                   </div>
                 </div>
 
+                {/* Update priority buttons to display Spanish text */}
                 <div>
                   <label className="block mb-2 font-semibold text-gray-800 text-sm md:text-base">
                     Prioridad
@@ -361,18 +379,30 @@ export default function TaskForm({
                         type="button"
                         onClick={() => handlePriorityChange(priorityOption)}
                         className={clsx(
-                          "px-3 py-1.5 rounded-md text-sm md:text-base font-medium transition-all duration-150 ease-in-out focus:outline-none",
-                          getPriorityColors(priorityOption),
-                          "focus:ring-2 focus:ring-opacity-50"
+                          "px-3 py-1.5 rounded-md text-sm md:text-base font-medium transition-all duration-150 ease-in-out ",
+                          getPriorityColors(priorityOption)
                         )}
                       >
-                        {priorityOption}
+                        {getPriorityLabel(priorityOption)}
                       </button>
                     ))}
+                    {/* Add the "No priority" button */}
+                    <button
+                      type="button"
+                      onClick={() => handlePriorityChange(null)}
+                      className={clsx(
+                        "px-3 py-1.5 rounded-md text-sm md:text-base font-medium transition-all duration-150 ease-in-out",
+                        formData.priority === undefined || formData.priority === null
+                          ? "bg-gray-600 text-white shadow-md"
+                          : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-300"
+                      )}
+                    >
+                      Sin prioridad
+                    </button>
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t">
+                <div className="flex justify-center gap-3 pt-4 border-t">
                   <button
                     type="button"
                     onClick={onClose}
@@ -490,6 +520,7 @@ export default function TaskForm({
               </div>
             </div>
 
+            {/* Update priority buttons to display Spanish text */}
             <div>
               <label className="block mb-2 font-semibold text-gray-800 text-sm md:text-base">
                 Prioridad
@@ -510,16 +541,29 @@ export default function TaskForm({
                     className={clsx(
                       "px-3 py-1.5 rounded-md text-sm md:text-base font-medium transition-all duration-150 ease-in-out focus:outline-none",
                       getPriorityColors(priorityOption),
-                      "focus:ring-teal-500"
+                      
                     )}
                   >
-                    {priorityOption}
+                    {getPriorityLabel(priorityOption)}
                   </button>
                 ))}
+                {/* Add the "No priority" button */}
+                <button
+                  type="button"
+                  onClick={() => handlePriorityChange(null)}
+                  className={clsx(
+                    "px-3 py-1.5 rounded-md text-sm md:text-base font-medium transition-all duration-150 ease-in-out",
+                    formData.priority === undefined || formData.priority === null
+                      ? "bg-gray-600 text-white shadow-md"
+                      : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-300"
+                  )}
+                >
+                  Sin prioridad
+                </button>
               </div>
             </div>
 
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-center pt-4">
               <button
                 type="submit"
                 disabled={isLoading}
