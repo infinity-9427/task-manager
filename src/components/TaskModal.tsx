@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Task, TaskStatus } from '@/app/shared/types/tasks';
+import { Task, TaskStatus, Priority } from '@/app/shared/types/tasks';
 import { useTaskContext } from "@/app/context/TaskContext";
 
 interface TaskModalProps {
@@ -54,6 +54,40 @@ const TaskModal = ({ taskId, onClose }: TaskModalProps) => {
     return status.replace('_', ' ');
   };
 
+  const getPriorityLabel = (priority?: Priority): string => {
+    if (!priority) return "Sin prioridad";
+    
+    switch (priority) {
+      case Priority.LOW:
+        return "Baja";
+      case Priority.MEDIUM:
+        return "Media";
+      case Priority.HIGH:
+        return "Alta";
+      case Priority.URGENT:
+        return "Urgente";
+      default:
+        return "Sin prioridad";
+    }
+  };
+  
+  const getPriorityColor = (priority?: Priority): string => {
+    if (!priority) return "bg-gray-500/50 text-gray-300";
+    
+    switch (priority) {
+      case Priority.LOW:
+        return "bg-green-800/50 text-green-300";
+      case Priority.MEDIUM:
+        return "bg-amber-800/50 text-amber-300";
+      case Priority.HIGH:
+        return "bg-pink-800/50 text-pink-300";
+      case Priority.URGENT:
+        return "bg-purple-800/50 text-purple-300";
+      default:
+        return "bg-gray-500/50 text-gray-300";
+    }
+  };
+
   return (
     <div 
       className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black transition-all duration-300 ${
@@ -100,6 +134,20 @@ const TaskModal = ({ taskId, onClose }: TaskModalProps) => {
             <div className="flex items-center">
               <span className={`px-3 py-1.5 rounded-full text-sm ${getStatusColor(task.status)} text-white`}>
                 {getStatusText(task.status)}
+              </span>
+            </div>
+          </div>
+          
+          {/* Priority */}
+          <div className="mb-6">
+            <h3 className="text-sm font-medium text-gray-400 mb-2">Priority</h3>
+            <div className="flex items-center">
+              <span className={`px-3 py-1.5 rounded-full text-sm ${getPriorityColor(task.priority)} inline-flex items-center gap-2`}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                  <path d="M3 3h18v18H3V3z" fill="none"/>
+                  <path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z"/>
+                </svg>
+                {getPriorityLabel(task.priority)}
               </span>
             </div>
           </div>
