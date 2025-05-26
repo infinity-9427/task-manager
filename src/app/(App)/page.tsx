@@ -84,16 +84,16 @@ export default function TaskBoard() {
             <button
               onClick={() => handleEditTask(task)}
               className="text-gray-500 hover:text-indigo-700 p-1 rounded hover:bg-gray-100"
-              title="Edit task"
+              title="Editar Tarea"
             >
-              <img src="/edit.svg" alt="Edit task" className="w-4 h-4" />
+              <img src="/edit.svg" alt="Editar Tarea" className="w-4 h-4" />
             </button>
             <button
               onClick={() => handleDeleteTask(task)}
               className="text-gray-500 hover:text-red-600 hover:bg-gray-100 p-1 rounded"
-              title="Delete task"
+              title="Eiminar Tarea"
             >
-              <img src="/delete.svg" alt="Delete task" className="w-4 h-4" />
+              <img src="/delete.svg" alt="Eiminar Tarea" className="w-4 h-4" />
             </button>
           </div>
         </div>
