@@ -102,12 +102,15 @@ export default function TaskForm({
       description: formData.description || "",
       status: formData.status as TaskStatus,
       priority: formData.priority, 
-      userId: 1
     };
 
     if (action === formAction.CREATE) {
       // Simple POST - no try/catch needed
-      const createdTask = await post('tasks', taskData);
+       const createData = {
+        ...taskData,
+        userId: 1 
+      };
+      const createdTask = await post('tasks', createData);
       
       if (createdTask) {
         addTask(createdTask);

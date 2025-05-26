@@ -20,6 +20,33 @@ export default function TaskBoard() {
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
+  
+  // Add this function to handle task updates
+  const handleUpdateTask = async (updatedTask: Partial<Task> & { id: string }) => {
+    try {
+      // Call the API endpoint with PUT request
+      const result = await fetcher.put(`tasks/${updatedTask.id}`, {
+        title: updatedTask.title,
+        description: updatedTask.description,
+        status: updatedTask.status,
+        priority: updatedTask.priority,
+        // Exclude any fields that shouldn't be updated
+      });
+      
+      if (result !== null && !fetcher.error) {
+        // Update was successful
+        // The TaskContext will handle the state update
+        setEditingTask(null);
+        return true;
+      }
+      
+      // If we reach here, there was an issue but no error was set
+      throw new Error('Failed to update task');
+    } catch (error) {
+      console.error('Error updating task:', error);
+      return false;
+    }
+  };
 
   const pendingTasks = tasks.filter(
     (task) => task.status === TaskStatus.PENDING
@@ -242,6 +269,9 @@ export default function TaskBoard() {
           action={formAction.EDIT}
           task={editingTask}
           onClose={() => setEditingTask(null)}
+          onSubmit={handleUpdateTask}
+          isSubmitting={fetcher.isLoading}
+          error={fetcher.error}
         />
       )}
 
