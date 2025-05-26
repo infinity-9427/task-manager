@@ -3,11 +3,13 @@ import { useTaskContext } from "@/app/context/TaskContext";
 import { TaskStatus, Task, formAction } from "@/app/shared/types/tasks";
 import { useState } from "react";
 import { useDragAndDrop } from "@/app/_hooks/useDragAndDrop";
+import { useFetcher } from "@/app/_hooks/useFetcher";
 import CustomTaskForm from "@/components/CustomTaskForm";
 import DeleteAlertDialog from "@/components/DeleteAlertDialog";
 
 export default function TaskBoard() {
   const { tasks, updateTaskStatus, deleteTask } = useTaskContext();
+  const fetcher = useFetcher<{ success: boolean }>({ baseUrl: process.env.NEXT_PUBLIC_API_URL });
   const dragDrop = useDragAndDrop<Task, TaskStatus>({
     onDropItem: async (taskId, newStatus) => {
       updateTaskStatus(taskId, newStatus);
@@ -35,6 +37,27 @@ export default function TaskBoard() {
 
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
+  };
+
+  const handleDeleteConfirm = async (taskId: string) => {
+    try {
+      // Call the API endpoint
+      const result = await fetcher.delete(`tasks/${taskId}`);
+      
+      if (result !== null || !fetcher.error) {
+        // Only update local state if API call was successful
+        deleteTask(taskId);
+        setDeletingTask(null);
+        return;
+      }
+      
+      // If we reach here, there was an issue but no error was set
+      throw new Error('Failed to delete task');
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      // The error state is already handled by the fetcher
+      // The DeleteAlertDialog will show the error message
+    }
   };
 
   const TaskCard = ({ task }: { task: Task }) => {
@@ -227,12 +250,11 @@ export default function TaskBoard() {
           title="Eliminar Tarea"
           message="¿Estás seguro de que deseas eliminar la tarea"
           itemName={deletingTask.title}
-          onDelete={async () => {
-            deleteTask(deletingTask.id);
-            setDeletingTask(null);
-          }}
+          onDelete={async () => await handleDeleteConfirm(deletingTask.id)}
           onCancel={() => setDeletingTask(null)}
           isOpen={!!deletingTask}
+          error={fetcher.error}
+          isDeleting={fetcher.isLoading}
         />
       )}
     </div>

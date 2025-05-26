@@ -7,18 +7,24 @@ import {
   TaskFormProps,
   formAction,
   IColorSchema,
+  Priority, // Add this import if not already in types
 } from "@/app/shared/types/tasks";
 import { useTaskContext } from "../app/context/TaskContext";
 import clsx from "clsx";
+import { useFetcher } from "@/app/_hooks/useFetcher";
 
 const taskFormSchema = z.object({
   title: z.string().min(1, "El título es obligatorio"),
-  description: z.string().optional(),
+  description: z.string().min(1, "La descripción es obligatoria"),
   status: z
     .enum([TaskStatus.PENDING, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED])
     .default(TaskStatus.PENDING),
+  priority: z
+    .enum([Priority.LOW, Priority.MEDIUM, Priority.HIGH, Priority.URGENT])
+    .optional(),
 });
 
+// Update form data type
 type TaskFormData = z.infer<typeof taskFormSchema>;
 
 export default function TaskForm({
@@ -28,20 +34,28 @@ export default function TaskForm({
   onClose,
 }: TaskFormProps) {
   const { addTask, updateTask } = useTaskContext();
+  
+  // Simplified useFetcher usage
+  const { post, put, data, error, isLoading } = useFetcher<Task>({
+    baseUrl: process.env.NEXT_PUBLIC_API_URL
+  });
 
   const [formData, setFormData] = useState<TaskFormData>({
     title: "",
     description: "",
     status: TaskStatus.PENDING,
+    // No default priority - truly optional
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Update useEffect for edit mode
   useEffect(() => {
     if (action === "edit" && task) {
       setFormData({
         title: task.title,
         description: task.description || "",
         status: task.status,
+        priority: task.priority,
       });
     }
   }, [action, task]);
@@ -65,7 +79,11 @@ export default function TaskForm({
     setFormData((prev) => ({ ...prev, status: newStatus }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handlePriorityChange = (newPriority: Priority) => {
+    setFormData((prev) => ({ ...prev, priority: newPriority }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = taskFormSchema.safeParse(formData);
 
@@ -83,47 +101,46 @@ export default function TaskForm({
       title: formData.title,
       description: formData.description || "",
       status: formData.status as TaskStatus,
+      priority: formData.priority, 
+      userId: 1
     };
 
     if (action === formAction.CREATE) {
-      addTask(taskData);
-      console.log("Added new task to context:", taskData);
-
-      if (onComplete) {
-        const tempTask: Task = {
-          ...taskData,
-          id: "temp-" + Date.now().toString(),
-        };
-        onComplete(tempTask);
-      }
-
-      // Close form immediately for create action
-      if (onClose) {
-        onClose();
-      }
+      // Simple POST - no try/catch needed
+      const createdTask = await post('tasks', taskData);
       
-      // Reset form data in case form isn't closed
-      setFormData({
-        title: "",
-        description: "",
-        status: TaskStatus.PENDING,
-      });
-      
-    } else if (action === formAction.EDIT && task) {
-      // Update existing task
-      updateTask(task.id, taskData);
-      console.log("Updated task in context:", { id: task.id, ...taskData });
-
-      if (onComplete) {
-        onComplete({
-          ...taskData,
-          id: task.id,
+      if (createdTask) {
+        addTask(createdTask);
+        
+        if (onComplete) {
+          onComplete(createdTask);
+        }
+        
+        if (onClose) {
+          onClose();
+        }
+        
+        // Reset form data
+        setFormData({
+          title: "",
+          description: "",
+          status: TaskStatus.PENDING,
         });
       }
+    } else if (action === formAction.EDIT && task) {
+      // Simple PUT - no try/catch needed
+      const updatedTask = await put(`tasks/${task.id}`, taskData);
       
-      // Close modal immediately for edit action
-      if (onClose) {
-        onClose();
+      if (updatedTask) {
+        updateTask(task.id, updatedTask);
+        
+        if (onComplete) {
+          onComplete(updatedTask);
+        }
+        
+        if (onClose) {
+          onClose();
+        }
       }
     }
 
@@ -171,6 +188,37 @@ export default function TaskForm({
           return "bg-emerald-100 text-lime-700 hover:bg-lime-100 border border-lime-300";
         default:
           return "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 border border-zinc-300";
+      }
+    }
+  };
+
+  // Updated priority button colors based on priority level
+  const getPriorityColors = (priority: Priority) => {
+    if (formData.priority === priority) {
+      switch (priority) {
+        case Priority.LOW:
+          return "bg-blue-500 text-white shadow-md";
+        case Priority.MEDIUM:
+          return "bg-yellow-500 text-white shadow-md";
+        case Priority.HIGH:
+          return "bg-orange-500 text-white shadow-md";
+        case Priority.URGENT:
+          return "bg-red-600 text-white shadow-md";
+        default:
+          return "bg-gray-600 text-white shadow-md";
+      }
+    } else {
+      switch (priority) {
+        case Priority.LOW:
+          return "bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-300";
+        case Priority.MEDIUM:
+          return "bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border border-yellow-300";
+        case Priority.HIGH:
+          return "bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-300";
+        case Priority.URGENT:
+          return "bg-red-50 text-red-700 hover:bg-red-100 border border-red-300";
+        default:
+          return "bg-gray-100 text-gray-800 hover:bg-gray-200 border border-gray-300";
       }
     }
   };
@@ -250,6 +298,11 @@ export default function TaskForm({
                       "focus:ring-2 focus:ring-indigo-200 focus:border-indigo-600"
                     )}
                   />
+                  {errors.description && (
+                    <p className="mt-1 text-xs md:text-sm text-red-600 font-medium">
+                      {errors.description}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -287,6 +340,35 @@ export default function TaskForm({
                   </div>
                 </div>
 
+                <div>
+                  <label className="block mb-2 font-semibold text-gray-800 text-sm md:text-base">
+                    Prioridad
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {(
+                      [
+                        Priority.LOW,
+                        Priority.MEDIUM,
+                        Priority.HIGH,
+                        Priority.URGENT,
+                      ] as Priority[]
+                    ).map((priorityOption) => (
+                      <button
+                        key={priorityOption}
+                        type="button"
+                        onClick={() => handlePriorityChange(priorityOption)}
+                        className={clsx(
+                          "px-3 py-1.5 rounded-md text-sm md:text-base font-medium transition-all duration-150 ease-in-out focus:outline-none",
+                          getPriorityColors(priorityOption),
+                          "focus:ring-2 focus:ring-opacity-50"
+                        )}
+                      >
+                        {priorityOption}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex justify-end gap-3 pt-4 border-t">
                   <button
                     type="button"
@@ -297,12 +379,16 @@ export default function TaskForm({
                   </button>
                   <button
                     type="submit"
+                    disabled={isLoading}
                     className={clsx(
                       "py-2 px-5 rounded-md font-medium text-sm md:text-base transition-colors shadow-sm",
+                      isLoading ? "opacity-70 cursor-not-allowed" : "",
                       scheme.button
                     )}
                   >
-                    Actualizar Tarea
+                    {isLoading 
+                      ? "Procesando..." 
+                      : action === formAction.CREATE ? "Crear Tarea" : "Actualizar Tarea"}
                   </button>
                 </div>
               </form>
@@ -359,6 +445,11 @@ export default function TaskForm({
                   "focus:ring-2 focus:ring-teal-200 focus:border-teal-600"
                 )}
               />
+              {errors.description && (
+                <p className="mt-1 text-xs md:text-sm text-red-600 font-medium">
+                  {errors.description}
+                </p>
+              )}
             </div>
 
             <div>
@@ -396,18 +487,58 @@ export default function TaskForm({
               </div>
             </div>
 
+            <div>
+              <label className="block mb-2 font-semibold text-gray-800 text-sm md:text-base">
+                Prioridad
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    Priority.LOW,
+                    Priority.MEDIUM,
+                    Priority.HIGH,
+                    Priority.URGENT,
+                  ] as Priority[]
+                ).map((priorityOption) => (
+                  <button
+                    key={priorityOption}
+                    type="button"
+                    onClick={() => handlePriorityChange(priorityOption)}
+                    className={clsx(
+                      "px-3 py-1.5 rounded-md text-sm md:text-base font-medium transition-all duration-150 ease-in-out focus:outline-none",
+                      getPriorityColors(priorityOption),
+                      "focus:ring-teal-500"
+                    )}
+                  >
+                    {priorityOption}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="flex justify-end pt-4">
               <button
                 type="submit"
+                disabled={isLoading}
                 className={clsx(
                   "py-2 px-5 text-white rounded-md font-medium text-sm md:text-base transition-colors shadow-sm",
+                  isLoading ? "opacity-70 cursor-not-allowed" : "",
                   scheme.button
                 )}
               >
-                Crear Tarea
+                {isLoading 
+                  ? "Procesando..." 
+                  : action === formAction.CREATE ? "Crear Tarea" : "Actualizar Tarea"}
               </button>
             </div>
           </form>
+
+          {/* Show API errors */}
+          {error && (
+            <p className="mt-2 text-sm text-red-600">
+              Error: {error}
+            </p>
+          )}
         </div>
       )}
     </>

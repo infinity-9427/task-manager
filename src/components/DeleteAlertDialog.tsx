@@ -7,7 +7,9 @@ export default function DeleteAlertDialog({
   itemName = 'Item',
   onDelete,
   onCancel,
-  isOpen = false
+  isOpen = false,
+  error = null,
+  isDeleting = false
 }: {
   title: string;
   message: string;
@@ -15,30 +17,46 @@ export default function DeleteAlertDialog({
   onDelete?: () => Promise<void> | void;
   onCancel?: () => void;
   isOpen?: boolean;
+  error?: string | null;
+  isDeleting?: boolean;
 }) {
   const [alertMessage, setAlertMessage] = useState('');
   const [alertType, setAlertType] = useState<'success' | 'error' | 'warning'>('success');
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [internalDeleting, setInternalDeleting] = useState(false);
+
+  // Use the external deleting state if provided
+  const deleteInProgress = isDeleting || internalDeleting;
 
   useEffect(() => {
     if (!isOpen) {
       setAlertMessage('');
-      setIsDeleting(false);
+      setInternalDeleting(false);
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    // Show error message if provided from outside
+    if (error) {
+      setAlertMessage(`Error: ${error}`);
+      setAlertType('error');
+    }
+  }, [error]);
+
   const handleConfirm = async () => {
     try {
-      setIsDeleting(true);
+      setInternalDeleting(true);
       if (onDelete) await onDelete();
-      setAlertMessage(`${itemName} deleted successfully!`);
-      setAlertType('success');
+      // If no error was thrown, show success message
+      if (!error) {
+        setAlertMessage(`${itemName} deleted successfully!`);
+        setAlertType('success');
+      }
     } catch (error) {
       setAlertMessage(`Failed to delete ${itemName}`);
       setAlertType('error');
       console.error("Delete error:", error);
     } finally {
-      setIsDeleting(false);
+      setInternalDeleting(false);
     }
   };
 
@@ -71,17 +89,17 @@ export default function DeleteAlertDialog({
             <div className="flex justify-end space-x-3 mt-4">
               <button
                 onClick={handleCancel}
-                disabled={isDeleting}
+                disabled={deleteInProgress}
                 className="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-md transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleConfirm}
-                disabled={isDeleting}
+                disabled={deleteInProgress}
                 className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md transition-colors flex items-center justify-center"
               >
-                {isDeleting ? (
+                {deleteInProgress ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

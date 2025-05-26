@@ -1,9 +1,15 @@
 import React from "react";
 
 export enum TaskStatus {
-  PENDING = "pending",
-  IN_PROGRESS = "in progress",
-  COMPLETED = "completed",
+  PENDING = "PENDING",
+  IN_PROGRESS = "IN_PROGRESS",
+  COMPLETED = "COMPLETED",
+}
+export enum Priority {
+  LOW = "LOW", 
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",  
+  URGENT = "URGENT",           
 }
 
 export enum formAction {
@@ -16,6 +22,8 @@ export interface Task {
   title: string;
   description: string;
   status: TaskStatus;
+  priority?: Priority;
+  userId: number;  // Add this field to match API response
 }
 
 export interface TaskFormProps {
@@ -28,10 +36,12 @@ export interface TaskFormProps {
 export interface TaskContextValue {
   tasks: Task[];
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
-  addTask: (task: Omit<Task, "id">) => void;
-  updateTask: (taskId: string, taskData: Omit<Task, "id">) => void;
+  addTask: (task: Task) => void;
+  updateTask: (taskId: string, taskData: Partial<Task>) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
-  deleteTask: (taskId: string) => void; // <-- Added deleteTask
+  deleteTask: (taskId: string) => void;
+  isLoading?: boolean;  // Add loading state
+  error?: string | null;  // Add error state
 }
 
 export interface UseDragAndDropOptions<TItem, TDestination> {
