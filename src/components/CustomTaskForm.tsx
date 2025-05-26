@@ -91,7 +91,6 @@ export default function TaskForm({
     };
 
     if (action === formAction.CREATE) {
-      // Add new task
       addTask(taskData);
       console.log("Added new task to context:", taskData);
 
@@ -181,7 +180,6 @@ export default function TaskForm({
 
   const scheme = colorSchemeHelper(action);
 
-  // Check if this is an edit form that should be shown as a modal
   const isEditModal = action === formAction.EDIT && onClose;
 
   return (
@@ -287,7 +285,7 @@ export default function TaskForm({
                             statusOption,
                             formData.status === statusOption
                           ),
-                          "focus:ring-indigo-500" // Consistent focus ring with action color
+                          "focus:ring-indigo-500" 
                         )}
                       >
                         {statusOption === TaskStatus.PENDING
@@ -323,7 +321,6 @@ export default function TaskForm({
           </div>
         </div>
       ) : (
-        // Regular form for create mode
         <div className="max-w-xl mx-auto p-4 md:p-6 bg-white rounded-lg shadow-md">
           <h2 className={`text-xl font-bold mb-4 ${scheme.titleColor}`}>
             Crear Nueva Tarea

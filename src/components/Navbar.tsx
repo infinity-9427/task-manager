@@ -56,7 +56,7 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
           >
             <input
               type="text"
-              placeholder="Search tasks..."
+              placeholder="Buscar Tareas..."
               className="bg-transparent border-none outline-none text-white placeholder-gray-400 w-full text-sm sm:text-base"
               value={searchQuery}
               onChange={handleSearchChange}

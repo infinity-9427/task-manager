@@ -2,11 +2,15 @@ import React, { useEffect, useState } from 'react';
 import CustomAlert from './CustomAlert';
 
 export default function DeleteAlertDialog({
+  title,
+  message,
   itemName = 'Item',
   onDelete,
   onCancel,
   isOpen = false
 }: {
+  title: string;
+  message: string;
   itemName?: string;
   onDelete?: () => Promise<void> | void;
   onCancel?: () => void;
@@ -16,7 +20,6 @@ export default function DeleteAlertDialog({
   const [alertType, setAlertType] = useState<'success' | 'error' | 'warning'>('success');
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Reset state when dialog opens/closes
   useEffect(() => {
     if (!isOpen) {
       setAlertMessage('');
@@ -61,9 +64,9 @@ export default function DeleteAlertDialog({
           </div>
         ) : (
           <>
-            <h2 className="font-bold text-gray-800 text-lg">Delete Confirmation</h2>
+            <h2 className="font-bold text-gray-800 text-lg"> {title} </h2>
             <p className="text-gray-600">
-              Are you sure you want to delete {itemName}? This action cannot be undone.
+             { `${message}, "${itemName}" ?` }
             </p>
             <div className="flex justify-end space-x-3 mt-4">
               <button
@@ -71,7 +74,7 @@ export default function DeleteAlertDialog({
                 disabled={isDeleting}
                 className="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-md transition-colors"
               >
-                Cancel
+                Cancelar
               </button>
               <button
                 onClick={handleConfirm}
@@ -87,7 +90,7 @@ export default function DeleteAlertDialog({
                     Deleting...
                   </>
                 ) : (
-                  'Delete'
+                  'Eliminar'
                 )}
               </button>
             </div>
