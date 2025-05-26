@@ -2,12 +2,18 @@
 import { useState } from 'react';
 import { z } from 'zod';
 import clsx from 'clsx';
+import { useFetcher } from '../app/_hooks/useFetcher';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLogin: (username: string, password: string) => void;
   onRegister: (username: string, password: string) => void;
+}
+
+interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
 }
 
 const loginSchema = z.object({
@@ -25,7 +31,8 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoginMode, setIsLoginMode] = useState(true);
+  // Use the fetcher hook for API requests
+  const { post, error: fetchError } = useFetcher<AuthResponse>({ baseUrl: process.env.NEXT_PUBLIC_API_URL });
   
   if (!isOpen) return null;
   
@@ -58,26 +65,35 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
       return;
     }
     
-    // Simulate login/register
+    // Send login request to API
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API call
+      const response = await post('/auth/login', {
+        username: formData.username,
+        password: formData.password
+      });
       
-      if (isLoginMode) {
+      if (response) {
+        // Store tokens in localStorage (or use a more secure method in production)
+        localStorage.setItem('accessToken', response.accessToken);
+        localStorage.setItem('refreshToken', response.refreshToken);
+        
+        // Call the onLogin callback with successful authentication
         onLogin(formData.username, formData.password);
       } else {
-        onRegister(formData.username, formData.password);
+        // If response is null, there was an error (handled by useFetcher)
+        setErrors({
+          auth: fetchError || 'Authentication failed. Please try again.'
+        });
       }
     } catch (error) {
       console.error('Auth error:', error);
+      setErrors({
+        auth: 'An unexpected error occurred. Please try again.'
+      });
     } finally {
       setIsLoading(false);
     }
-  };
-  
-  const toggleMode = () => {
-    setIsLoginMode(!isLoginMode);
-    setErrors({});
   };
   
   return (
@@ -110,14 +126,21 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
         <div className="p-6 md:p-8">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {isLoginMode ? 'Welcome back' : 'Create account'}
+              Welcome back
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              {isLoginMode ? 'Sign in to access your tasks' : 'Register to get started with task management'}
+              Sign in to access your tasks
             </p>
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Show general auth error if present */}
+            {errors.auth && (
+              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm">
+                {errors.auth}
+              </div>
+            )}
+            
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Username
@@ -152,7 +175,7 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
                 id="password"
                 name="password"
                 type="password"
-                autoComplete={isLoginMode ? "current-password" : "new-password"}
+                autoComplete="current-password"
                 required
                 value={formData.password}
                 onChange={handleChange}
@@ -163,7 +186,7 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
                     ? "border-red-500 dark:border-red-400" 
                     : "border-gray-300 dark:border-gray-600"
                 )}
-                placeholder={isLoginMode ? "Enter your password" : "Create a password"}
+                placeholder="Enter your password"
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password}</p>
@@ -187,24 +210,12 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    {isLoginMode ? 'Signing in...' : 'Creating account...'}
+                    Signing in...
                   </div>
-                ) : (isLoginMode ? "Sign in" : "Register")}
+                ) : "Sign in"}
               </button>
             </div>
           </form>
-          
-          <div className="mt-8 text-center">
-            <p className="text-gray-600 dark:text-gray-400">
-              {isLoginMode ? "Don't have an account?" : "Already have an account?"}{' '}
-              <button 
-                onClick={toggleMode}
-                className="font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 transition-colors"
-              >
-                {isLoginMode ? "Register now" : "Sign in"}
-              </button>
-            </p>
-          </div>
         </div>
       </div>
     </div>
