@@ -12,7 +12,20 @@ export default function TaskBoard() {
   const fetcher = useFetcher<{ success: boolean }>({ baseUrl: process.env.NEXT_PUBLIC_API_URL });
   const dragDrop = useDragAndDrop<Task, TaskStatus>({
     onDropItem: async (taskId, newStatus) => {
-      updateTaskStatus(taskId, newStatus);
+      try {
+        const result = await fetcher.put(`tasks/${taskId}`, {
+          status: newStatus
+        });
+        
+        if (result !== null && !fetcher.error) {
+          updateTaskStatus(taskId, newStatus);
+        } else {
+          throw new Error('Failed to update task status');
+        }
+      } catch (error) {
+        console.error('Error updating task status:', error);
+        throw error;
+      }
     },
     loadingDelay: 300,
     onError: (error) => console.error("Error updating task status:", error),
@@ -21,26 +34,20 @@ export default function TaskBoard() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
   
-  // Add this function to handle task updates
   const handleUpdateTask = async (updatedTask: Partial<Task> & { id: string }) => {
     try {
-      // Call the API endpoint with PUT request
       const result = await fetcher.put(`tasks/${updatedTask.id}`, {
         title: updatedTask.title,
         description: updatedTask.description,
         status: updatedTask.status,
         priority: updatedTask.priority,
-        // Exclude any fields that shouldn't be updated
       });
       
       if (result !== null && !fetcher.error) {
-        // Update was successful
-        // The TaskContext will handle the state update
         setEditingTask(null);
         return true;
       }
       
-      // If we reach here, there was an issue but no error was set
       throw new Error('Failed to update task');
     } catch (error) {
       console.error('Error updating task:', error);
@@ -68,22 +75,17 @@ export default function TaskBoard() {
 
   const handleDeleteConfirm = async (taskId: string) => {
     try {
-      // Call the API endpoint
       const result = await fetcher.delete(`tasks/${taskId}`);
       
       if (result !== null || !fetcher.error) {
-        // Only update local state if API call was successful
         deleteTask(taskId);
         setDeletingTask(null);
         return;
       }
       
-      // If we reach here, there was an issue but no error was set
       throw new Error('Failed to delete task');
     } catch (error) {
       console.error('Error deleting task:', error);
-      // The error state is already handled by the fetcher
-      // The DeleteAlertDialog will show the error message
     }
   };
 

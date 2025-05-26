@@ -11,9 +11,7 @@ interface FetchResponse<T> {
   isLoading: boolean;
 }
 
-/**
- * Simplified fetch hook for API requests
- */
+
 export function useFetcher<T = any>(options: UseFetcherOptions = {}) {
   const [state, setState] = useState<FetchResponse<T>>({
     data: null,
@@ -23,23 +21,17 @@ export function useFetcher<T = any>(options: UseFetcherOptions = {}) {
 
   const baseUrl = options.baseUrl  || '';
 
-  /**
-   * Builds the complete URL from base URL and endpoint
-   */
+
   const buildUrl = (endpoint: string): string => {
-    // Handle complete URLs
     if (endpoint.startsWith('http')) return endpoint;
     
-    // Normalize parts
     const base = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     const path = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
     
     return `${base}/${path}`;
   };
 
-  /**
-   * Makes an API request
-   */
+
   const request = async (
     endpoint: string,
     method: string,
@@ -70,7 +62,7 @@ export function useFetcher<T = any>(options: UseFetcherOptions = {}) {
         try {
           const errorJson = JSON.parse(errorText);
           if (errorJson.message) errorMessage = errorJson.message;
-        } catch {} // Ignore JSON parse errors
+        } catch {} 
         
         throw new Error(errorMessage);
       }
@@ -91,7 +83,6 @@ export function useFetcher<T = any>(options: UseFetcherOptions = {}) {
     }
   };
 
-  // Simplified API methods
   return {
     get: (endpoint: string) => request(endpoint, 'GET'),
     post: <D extends object>(endpoint: string, data: D) => request(endpoint, 'POST', data),

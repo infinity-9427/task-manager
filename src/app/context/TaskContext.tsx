@@ -11,13 +11,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     baseUrl: process.env.NEXT_PUBLIC_API_URL
   });
   
-  // Fetch tasks when component mounts
   useEffect(() => {
     const fetchTasks = async () => {
       const fetchedTasks = await get('tasks');
       
       if (fetchedTasks) {
-        // Filter tasks by userId = 1
         const userTasks = fetchedTasks.filter(task => task.userId === 1);
         setTasks(userTasks);
       }

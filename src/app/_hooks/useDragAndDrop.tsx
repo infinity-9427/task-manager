@@ -10,13 +10,10 @@ export function useDragAndDrop<TItem = any, TDestination = any>(
     onError = (error) => console.error("Error in drag and drop operation:", error)
   } = options;
   
-  // State for tracking the dragged item
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   
-  // Loading states for visual feedback
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
 
-  // Track which destination is being dragged over for visual feedback
   const [dragTargetId, setDragTargetId] = useState<string | null>(null);
   
   const handleDragStart = (itemId: string) => {
@@ -39,15 +36,12 @@ export function useDragAndDrop<TItem = any, TDestination = any>(
   const handleDrop = async (destination: TDestination, targetId?: string) => {
     if (draggedItemId) {
       try {
-        // Set loading state for visual feedback
         setIsLoading(prev => ({ ...prev, [draggedItemId]: true }));
         
-        // Optional delay for API simulation
         if (loadingDelay > 0) {
           await new Promise(resolve => setTimeout(resolve, loadingDelay));
         }
         
-        // Call the provided update function
         await onDropItem(draggedItemId, destination);
       } catch (error) {
         onError(error);
@@ -59,7 +53,6 @@ export function useDragAndDrop<TItem = any, TDestination = any>(
     }
   };
 
-  // Check if a specific target is being dragged over
   const isDraggedOver = (targetId: string) => dragTargetId === targetId;
 
   return {

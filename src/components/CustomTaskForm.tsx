@@ -21,11 +21,10 @@ const taskFormSchema = z.object({
     .default(TaskStatus.PENDING),
   priority: z
     .enum([Priority.LOW, Priority.MEDIUM, Priority.HIGH, Priority.URGENT])
-    .nullable() // Add this to properly handle null values
+    .nullable() 
     .optional(),
 });
 
-// Update form data type
 type TaskFormData = z.infer<typeof taskFormSchema>;
 
 export default function TaskForm({
@@ -36,7 +35,6 @@ export default function TaskForm({
 }: TaskFormProps) {
   const { addTask, updateTask } = useTaskContext();
   
-  // Simplified useFetcher usage
   const { post, put, data, error, isLoading } = useFetcher<Task>({
     baseUrl: process.env.NEXT_PUBLIC_API_URL
   });
@@ -45,11 +43,9 @@ export default function TaskForm({
     title: "",
     description: "",
     status: TaskStatus.PENDING,
-    // No default priority - truly optional
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Update useEffect for edit mode
   useEffect(() => {
     if (action === "edit" && task) {
       setFormData({
@@ -102,11 +98,10 @@ export default function TaskForm({
       title: formData.title,
       description: formData.description || "",
       status: formData.status as TaskStatus,
-      priority: formData.priority // Always include priority, even if null
+      priority: formData.priority 
     };
 
     if (action === formAction.CREATE) {
-      // Simple POST - no try/catch needed
        const createData = {
         ...taskData,
         userId: 1 
@@ -124,7 +119,6 @@ export default function TaskForm({
           onClose();
         }
         
-        // Reset form data
         setFormData({
           title: "",
           description: "",
@@ -132,7 +126,6 @@ export default function TaskForm({
         });
       }
     } else if (action === formAction.EDIT && task) {
-      // Simple PUT - no try/catch needed
       const updatedTask = await put(`tasks/${task.id}`, taskData);
       
       if (updatedTask) {
@@ -196,38 +189,35 @@ export default function TaskForm({
     }
   };
 
-  // Updated priority button colors based on priority level
   const getPriorityColors = (priority: Priority) => {
     if (formData.priority === priority) {
       switch (priority) {
         case Priority.LOW:
-          return "bg-green-600 text-white shadow-md"; // Changed from blue to green
+          return "bg-green-600 text-white shadow-md"; 
         case Priority.MEDIUM:
-          return "bg-amber-500 text-white shadow-md"; // Changed from yellow to amber
+          return "bg-amber-500 text-white shadow-md"; 
         case Priority.HIGH:
-          return "bg-pink-600 text-white shadow-md"; // Changed from orange to pink
+          return "bg-pink-600 text-white shadow-md"; 
         case Priority.URGENT:
-          return "bg-purple-800 text-white shadow-md"; // Changed from red to deep purple
+          return "bg-purple-800 text-white shadow-md"; 
         default:
           return "bg-gray-600 text-white shadow-md";
       }
     } else {
       switch (priority) {
         case Priority.LOW:
-          return "bg-green-50 text-green-800 hover:bg-green-100 border border-green-300"; // Green theme
+          return "bg-green-50 text-green-800 hover:bg-green-100 border border-green-300"; 
         case Priority.MEDIUM:
-          return "bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-300"; // Amber theme
+          return "bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-300"; 
         case Priority.HIGH:
-          return "bg-pink-50 text-pink-800 hover:bg-pink-100 border border-pink-300"; // Pink theme
-        case Priority.URGENT:
-          return "bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-300"; // Deep purple theme
+          return "bg-pink-50 text-pink-800 hover:bg-pink-100 border border-pink-300"; 
+          return "bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-300"; 
         default:
           return "bg-gray-100 text-gray-800 hover:bg-gray-200 border border-gray-300";
       }
     }
   };
 
-  // Add this helper function for priority labels in Spanish
   const getPriorityLabel = (priority: Priority): string => {
     switch (priority) {
       case Priority.LOW:
@@ -250,7 +240,6 @@ export default function TaskForm({
   return (
     <>
       {isEditModal ? (
-        // Modal overlay for edit mode
         <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-800/60 flex items-center justify-center p-4">
           <div className="relative bg-white rounded-lg shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto animate-fadeIn">
             <div className="sticky top-0 bg-white z-10 px-6 py-4 border-b flex justify-between items-center">
@@ -360,7 +349,6 @@ export default function TaskForm({
                   </div>
                 </div>
 
-                {/* Update priority buttons to display Spanish text */}
                 <div>
                   <label className="block mb-2 font-semibold text-gray-800 text-sm md:text-base">
                     Prioridad
