@@ -316,9 +316,6 @@ export default function TaskForm({
         </div>
       ) : (
         <div className="max-w-xl mx-auto p-4 md:p-6 bg-white rounded-lg shadow-md">
-          <h2 className={`text-xl font-bold mb-4 ${scheme.titleColor}`}>
-            Crear Nueva Tarea
-          </h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
