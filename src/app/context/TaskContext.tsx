@@ -7,7 +7,8 @@ const TaskContext = createContext<TaskContextValue>({
   setTasks: () => {},
   addTask: () => {},
   updateTask: () => {},
-  updateTaskStatus: () => {}
+  updateTaskStatus: () => {},
+  deleteTask: () => {} // <-- Default deleteTask
 });
 
 export function TaskProvider({ children }: { children: React.ReactNode }) {
@@ -57,8 +58,14 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+  const deleteTask = (taskId: string) => {
+    setTasks(currentTasks =>
+      currentTasks.filter(task => task.id !== taskId)
+    );
+  };
+
   return (
-    <TaskContext.Provider value={{ tasks, setTasks, addTask, updateTask, updateTaskStatus }}>
+    <TaskContext.Provider value={{ tasks, setTasks, addTask, updateTask, updateTaskStatus, deleteTask }}>
       {children}
     </TaskContext.Provider>
   );

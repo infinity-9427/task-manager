@@ -7,9 +7,9 @@ import {
   Task,
   TaskFormProps,
   formAction,
+  IColorSchema,
 } from "@/app/shared/types/tasks";
 import { useTaskContext } from "../app/context/TaskContext";
-import { colorSchemeHelper, getStatusColors } from "@/utils/customFormColors";
 import clsx from "clsx";
 
 const taskFormSchema = z.object({
@@ -134,6 +134,24 @@ export default function TaskForm({
     }, 1500);
   };
 
+   const colorSchemeHelper = (action: string): IColorSchema => {
+    return action === formAction.CREATE
+      ? {
+          primary: "teal-600",
+          hover: "teal-700",
+          focus: "teal-300",
+          button: "bg-sky-700 hover:bg-sky-600 text-white",
+          titleColor: "text-teal-700 dark:text-teal-300",
+        }
+      : {
+          primary: "indigo-600",
+          hover: "indigo-700",
+          focus: "indigo-300",
+          button: "bg-indigo-600 hover:bg-indigo-700 text-white",
+          titleColor: "text-indigo-700 dark:text-indigo-300",
+        };
+  };
+
   const getStatusColors = (status: TaskStatus, isSelected: boolean) => {
     if (isSelected) {
       switch (status) {
@@ -163,128 +181,262 @@ export default function TaskForm({
 
   const scheme = colorSchemeHelper(action);
 
+  // Check if this is an edit form that should be shown as a modal
+  const isEditModal = action === formAction.EDIT && onClose;
+
   return (
     <>
-      <div className="max-w-xl mx-auto p-4 md:p-6 bg-white rounded-lg shadow-md">
-        <h2 className={`text-xl font-bold mb-4 ${scheme.titleColor}`}>
-          {action === "create" ? "Crear Nueva Tarea" : "Editar Tarea"}
-        </h2>
-
-        {alertMessage && (
-          <div className="mb-4">
-            <CustomAlert
-              message={alertMessage}
-              type={alertType}
-              onClose={() => setAlertMessage("")}
-            />
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label
-              htmlFor="title"
-              className="block mb-2 font-semibold text-gray-800 text-sm md:text-base"
-            >
-              Título
-            </label>
-            <input
-              id="title"
-              name="title"
-              type="text"
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="Escribe el título de la tarea"
-              className={clsx(
-                "w-full p-3 border rounded-md text-gray-800 text-sm md:text-base transition-colors focus:outline-none",
-                errors.title ? "border-red-600" : "border-gray-400",
-                action === "create"
-                  ? "focus:ring-2 focus:ring-teal-200 focus:border-teal-600"
-                  : "focus:ring-2 focus:ring-indigo-200 focus:border-indigo-600"
+      {isEditModal ? (
+        // Modal overlay for edit mode
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-800/60 flex items-center justify-center p-4">
+          <div className="relative bg-white rounded-lg shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto animate-fadeIn">
+            <div className="sticky top-0 bg-white z-10 px-6 py-4 border-b flex justify-between items-center">
+              <h2 className={`text-xl font-bold ${scheme.titleColor}`}>
+                Editar Tarea
+              </h2>
+              <button
+                onClick={onClose}
+                className="p-1 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                aria-label="Close"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {alertMessage && (
+                <div className="mb-4">
+                  <CustomAlert
+                    message={alertMessage}
+                    type={alertType}
+                    onClose={() => setAlertMessage("")}
+                  />
+                </div>
               )}
-            />
-            {errors.title && (
-              <p className="mt-1 text-xs md:text-sm text-red-600 font-medium">
-                {errors.title}
-              </p>
-            )}
-          </div>
 
-          <div>
-            <label
-              htmlFor="description"
-              className="block mb-2 font-semibold text-gray-800 text-sm md:text-base"
-            >
-              Descripción
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              rows={4}
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Describe la tarea en detalle"
-              className={clsx(
-                "w-full p-3 border border-gray-400 rounded-md text-gray-800 text-sm md:text-base transition-colors focus:outline-none resize-y",
-                action === "create"
-                  ? "focus:ring-2 focus:ring-teal-200 focus:border-teal-600"
-                  : "focus:ring-2 focus:ring-indigo-200 focus:border-indigo-600"
-              )}
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2 font-semibold text-gray-800 text-sm md:text-base">
-              Estado de la Tarea
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {(
-                [
-                  TaskStatus.PENDING,
-                  TaskStatus.IN_PROGRESS,
-                  TaskStatus.COMPLETED,
-                ] as TaskStatus[]
-              ).map((statusOption) => (
-                <button
-                  key={statusOption}
-                  type="button"
-                  onClick={() => handleStatusChange(statusOption)}
-                  className={clsx(
-                    "px-3 py-1.5 rounded-md text-sm md:text-base font-medium transition-all duration-150 ease-in-out focus:outline-none ",
-                    getStatusColors(
-                      statusOption,
-                      formData.status === statusOption
-                    ),
-                    action === "create"
-                      ? "focus:ring-teal-500"
-                      : "focus:ring-indigo-500" // Consistent focus ring with action color
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div>
+                  <label
+                    htmlFor="title"
+                    className="block mb-2 font-semibold text-gray-800 text-sm md:text-base"
+                  >
+                    Título
+                  </label>
+                  <input
+                    id="title"
+                    name="title"
+                    type="text"
+                    value={formData.title}
+                    onChange={handleChange}
+                    placeholder="Escribe el título de la tarea"
+                    className={clsx(
+                      "w-full p-3 border rounded-md text-gray-800 text-sm md:text-base transition-colors focus:outline-none",
+                      errors.title ? "border-red-600" : "border-gray-400",
+                      "focus:ring-2 focus:ring-indigo-200 focus:border-indigo-600"
+                    )}
+                  />
+                  {errors.title && (
+                    <p className="mt-1 text-xs md:text-sm text-red-600 font-medium">
+                      {errors.title}
+                    </p>
                   )}
-                >
-                  {statusOption === TaskStatus.PENDING
-                    ? "Pendiente"
-                    : statusOption === TaskStatus.IN_PROGRESS
-                    ? "En progreso"
-                    : "Completada"}
-                </button>
-              ))}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="description"
+                    className="block mb-2 font-semibold text-gray-800 text-sm md:text-base"
+                  >
+                    Descripción
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    rows={4}
+                    value={formData.description}
+                    onChange={handleChange}
+                    placeholder="Describe la tarea en detalle"
+                    className={clsx(
+                      "w-full p-3 border border-gray-400 rounded-md text-gray-800 text-sm md:text-base transition-colors focus:outline-none resize-y",
+                      "focus:ring-2 focus:ring-indigo-200 focus:border-indigo-600"
+                    )}
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-2 font-semibold text-gray-800 text-sm md:text-base">
+                    Estado de la Tarea
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {(
+                      [
+                        TaskStatus.PENDING,
+                        TaskStatus.IN_PROGRESS,
+                        TaskStatus.COMPLETED,
+                      ] as TaskStatus[]
+                    ).map((statusOption) => (
+                      <button
+                        key={statusOption}
+                        type="button"
+                        onClick={() => handleStatusChange(statusOption)}
+                        className={clsx(
+                          "px-3 py-1.5 rounded-md text-sm md:text-base font-medium transition-all duration-150 ease-in-out focus:outline-none",
+                          getStatusColors(
+                            statusOption,
+                            formData.status === statusOption
+                          ),
+                          "focus:ring-indigo-500" // Consistent focus ring with action color
+                        )}
+                      >
+                        {statusOption === TaskStatus.PENDING
+                          ? "Pendiente"
+                          : statusOption === TaskStatus.IN_PROGRESS
+                          ? "En progreso"
+                          : "Completada"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="py-2 px-5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md font-medium text-sm md:text-base transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className={clsx(
+                      "py-2 px-5 rounded-md font-medium text-sm md:text-base transition-colors shadow-sm",
+                      scheme.button
+                    )}
+                  >
+                    Actualizar Tarea
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
+        </div>
+      ) : (
+        // Regular form for create mode
+        <div className="max-w-xl mx-auto p-4 md:p-6 bg-white rounded-lg shadow-md">
+          <h2 className={`text-xl font-bold mb-4 ${scheme.titleColor}`}>
+            Crear Nueva Tarea
+          </h2>
 
-          <div className="flex justify-end pt-4">
-            <button
-              type="submit"
-              className={clsx(
-                "py-2 px-5 text-white rounded-md font-medium text-sm md:text-base transition-colors shadow-sm",
-                scheme.button
+          {alertMessage && (
+            <div className="mb-4">
+              <CustomAlert
+                message={alertMessage}
+                type={alertType}
+                onClose={() => setAlertMessage("")}
+              />
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label
+                htmlFor="title"
+                className="block mb-2 font-semibold text-gray-800 text-sm md:text-base"
+              >
+                Título
+              </label>
+              <input
+                id="title"
+                name="title"
+                type="text"
+                value={formData.title}
+                onChange={handleChange}
+                placeholder="Escribe el título de la tarea"
+                className={clsx(
+                  "w-full p-3 border rounded-md text-gray-800 text-sm md:text-base transition-colors focus:outline-none",
+                  errors.title ? "border-red-600" : "border-gray-400",
+                  "focus:ring-2 focus:ring-teal-200 focus:border-teal-600"
+                )}
+              />
+              {errors.title && (
+                <p className="mt-1 text-xs md:text-sm text-red-600 font-medium">
+                  {errors.title}
+                </p>
               )}
-            >
-              {action === formAction.CREATE
-                ? "Crear Tarea"
-                : "Actualizar Tarea"}
-            </button>
-          </div>
-        </form>
-      </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="description"
+                className="block mb-2 font-semibold text-gray-800 text-sm md:text-base"
+              >
+                Descripción
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                rows={4}
+                value={formData.description}
+                onChange={handleChange}
+                placeholder="Describe la tarea en detalle"
+                className={clsx(
+                  "w-full p-3 border border-gray-400 rounded-md text-gray-800 text-sm md:text-base transition-colors focus:outline-none resize-y",
+                  "focus:ring-2 focus:ring-teal-200 focus:border-teal-600"
+                )}
+              />
+            </div>
+
+            <div>
+              <label className="block mb-2 font-semibold text-gray-800 text-sm md:text-base">
+                Estado de la Tarea
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    TaskStatus.PENDING,
+                    TaskStatus.IN_PROGRESS,
+                    TaskStatus.COMPLETED,
+                  ] as TaskStatus[]
+                ).map((statusOption) => (
+                  <button
+                    key={statusOption}
+                    type="button"
+                    onClick={() => handleStatusChange(statusOption)}
+                    className={clsx(
+                      "px-3 py-1.5 rounded-md text-sm md:text-base font-medium transition-all duration-150 ease-in-out focus:outline-none ",
+                      getStatusColors(
+                        statusOption,
+                        formData.status === statusOption
+                      ),
+                      "focus:ring-teal-500"
+                    )}
+                  >
+                    {statusOption === TaskStatus.PENDING
+                      ? "Pendiente"
+                      : statusOption === TaskStatus.IN_PROGRESS
+                      ? "En progreso"
+                      : "Completada"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <button
+                type="submit"
+                className={clsx(
+                  "py-2 px-5 text-white rounded-md font-medium text-sm md:text-base transition-colors shadow-sm",
+                  scheme.button
+                )}
+              >
+                Crear Tarea
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </>
   );
 }

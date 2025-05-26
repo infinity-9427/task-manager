@@ -31,6 +31,7 @@ export interface TaskContextValue {
   addTask: (task: Omit<Task, "id">) => void;
   updateTask: (taskId: string, taskData: Omit<Task, "id">) => void;
   updateTaskStatus: (taskId: string, status: TaskStatus) => void;
+  deleteTask: (taskId: string) => void; // <-- Added deleteTask
 }
 
 export interface UseDragAndDropOptions<TItem, TDestination> {
