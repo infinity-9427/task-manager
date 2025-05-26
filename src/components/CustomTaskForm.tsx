@@ -119,8 +119,12 @@ export default function TaskForm({
           id: task.id,
         });
       }
-
-      setAlertMessage("¡Tarea actualizada exitosamente!");
+      
+      // Close modal immediately for edit action
+      if (onClose) {
+        onClose();
+      }
+      return; // Exit early to avoid setting alert message and timeout
     }
 
     setAlertType("success");
@@ -204,15 +208,7 @@ export default function TaskForm({
             </div>
             
             <div className="p-6">
-              {alertMessage && (
-                <div className="mb-4">
-                  <CustomAlert
-                    message={alertMessage}
-                    type={alertType}
-                    onClose={() => setAlertMessage("")}
-                  />
-                </div>
-              )}
+              {/* Remove alert display for edit mode */}
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>

@@ -62,13 +62,14 @@ export default function TaskBoard() {
     };
 
     return (
-      <div
-        draggable={!isBeingEdited}
-        onDragStart={() => dragDrop.handleDragStart(task.id)}
-        className={`bg-white rounded-lg shadow-md p-4 mb-3 relative ${
-          isTaskLoading ? "opacity-60" : "hover:shadow-lg"
-        } transition-all border border-gray-100 hover:border-gray-200`}
-      >
+<div
+  draggable={!isBeingEdited}
+  onDragStart={() => dragDrop.handleDragStart(task.id)}
+  onDragEnd={dragDrop.handleDragEnd}
+  className={`bg-white rounded-lg shadow-md p-4 mb-3 relative ${
+    isTaskLoading ? "opacity-60" : "hover:shadow-lg"
+  } transition-all border border-gray-100 hover:border-gray-200`}
+>
         {isTaskLoading && (
           <div className="absolute inset-0 bg-white bg-opacity-30 flex items-center justify-center rounded-lg">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -224,7 +225,7 @@ export default function TaskBoard() {
       {deletingTask && (
         <DeleteAlertDialog
           title="Eliminar Tarea"
-          message="Esta acción no se puede deshacer. ¿Estás seguro de que deseas eliminar la tarea"
+          message="¿Estás seguro de que deseas eliminar la tarea"
           itemName={deletingTask.title}
           onDelete={async () => {
             deleteTask(deletingTask.id);

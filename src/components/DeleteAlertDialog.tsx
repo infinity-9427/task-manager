@@ -66,7 +66,7 @@ export default function DeleteAlertDialog({
           <>
             <h2 className="font-bold text-gray-800 text-lg"> {title} </h2>
             <p className="text-gray-600">
-             { `${message}, "${itemName}" ?` }
+             { `${message}, `}<span className="font-bold">"{itemName}"</span>{` ?` }
             </p>
             <div className="flex justify-end space-x-3 mt-4">
               <button

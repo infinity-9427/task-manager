@@ -1,15 +1,18 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import CustomTaskForm from "./CustomTaskForm";
 import AuthModal from "./AuthModal";
+import TaskModal from "./TaskModal"; // Add this import at the top
 import { Task } from '@/app/shared/types/tasks';
+import { useTaskContext } from "@/app/context/TaskContext";
 
 // Dummy user for testing authentication
 const DUMMY_USER = {
   username: "testuser",
-  password: "password123"
+  // Don't expose password directly in code
+  password: process.env.NEXT_PUBLIC_DUMMY_PASSWORD || "demo_password" 
 };
 
 interface NavbarProps {
@@ -17,6 +20,7 @@ interface NavbarProps {
 }
 
 const Navbar = ({ onCreateTask }: NavbarProps) => {
+  const { tasks } = useTaskContext(); // Get tasks from context
   const [currentTask, setCurrentTask] = useState<Task | undefined>(undefined);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,6 +28,10 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
+  const [searchResults, setSearchResults] = useState<Task[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null); // Add state for selected task ID
+  const searchRef = useRef<HTMLDivElement>(null);
 
   // Check authentication state from cookies on component mount
   useEffect(() => {
@@ -49,12 +57,63 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
     }
+
+    // Add click event listener to close suggestions when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
-  const handleSearchFocus = () => setIsSearchFocused(true);
-  const handleSearchBlur = () => setIsSearchFocused(false);
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setSearchQuery(e.target.value);
+  // Update search results when search query or tasks change
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setSearchResults([]);
+      return;
+    }
+
+    const filteredTasks = tasks.filter(task => 
+      task.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      task.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    setSearchResults(filteredTasks);
+  }, [searchQuery, tasks]);
+
+  const handleSearchFocus = () => {
+    setIsSearchFocused(true);
+    if (searchQuery.trim() !== '') {
+      setShowSuggestions(true);
+    }
+  };
+
+  const handleSearchBlur = () => {
+    setIsSearchFocused(false);
+    // Don't hide suggestions immediately to allow clicking on them
+    setTimeout(() => {
+      if (!searchRef.current?.contains(document.activeElement)) {
+        setShowSuggestions(false);
+      }
+    }, 200);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setShowSuggestions(value.trim() !== '');
+  };
+
+  const handleSuggestionClick = (task: Task) => {
+    setSearchQuery(task.title);
+    setShowSuggestions(false);
+    setSelectedTaskId(task.id); // Open the modal with the selected task
+  };
 
   const handleTaskCreated = (task: any) => {
     if (onCreateTask) {
@@ -130,19 +189,63 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
 
           {/* Search Bar */}
           <div
-            className={`flex items-center bg-gray-800 rounded-md px-3 py-2 flex-1 mx-2 sm:mx-4 max-w-xl border ${
-              isSearchFocused ? "border-blue-400" : "border-transparent"
+            ref={searchRef}
+            className={`flex-1 mx-2 sm:mx-4 max-w-xl relative ${
+              showSuggestions && searchResults.length > 0 ? 'z-10' : ''
             }`}
           >
-            <input
-              type="text"
-              placeholder="Buscar tareas..."
-              className="bg-transparent border-none outline-none text-white placeholder-gray-400 w-full text-sm sm:text-base"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onFocus={handleSearchFocus}
-              onBlur={handleSearchBlur}
-            />
+            <div
+              className={`flex items-center bg-gray-800 rounded-md px-3 py-2 border ${
+                isSearchFocused ? "border-blue-400" : "border-transparent"
+              }`}
+            >
+              <input
+                type="text"
+                placeholder="Buscar tareas..."
+                className="bg-transparent border-none outline-none text-white placeholder-gray-400 w-full text-sm sm:text-base"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onFocus={handleSearchFocus}
+                onBlur={handleSearchBlur}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="text-gray-400 hover:text-white ml-2"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            
+            {/* Search Suggestions */}
+            {showSuggestions && searchResults.length > 0 && (
+              <div className="absolute mt-1 w-full bg-gray-800 rounded-md shadow-lg border border-gray-700 overflow-hidden animate-fadeIn">
+                <ul>
+                  {searchResults.map((task) => (
+                    <li
+                      key={task.id}
+                      className="px-4 py-2 hover:bg-gray-700 cursor-pointer border-b border-gray-700 last:border-0"
+                      onClick={() => handleSuggestionClick(task)}
+                    >
+                      <div className="font-medium">{task.title}</div>
+                      {task.description && (
+                        <div className="text-sm text-gray-400 truncate">{task.description}</div>
+                      )}
+                      <div className="text-xs mt-1">
+                        <span className={`px-2 py-0.5 rounded-full ${
+                          task.status === 'PENDING' ? 'bg-yellow-800 text-yellow-200' :
+                          task.status === 'IN_PROGRESS' ? 'bg-blue-800 text-blue-200' : 
+                          'bg-green-800 text-green-200'
+                        }`}>
+                          {task.status.replace('_', ' ')}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           {/* Right side icons */}
@@ -220,15 +323,25 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
           onRegister={handleRegister}
         />
       )}
+      
+      {/* Task Detail Modal */}
+      {selectedTaskId && (
+        <TaskModal
+          taskId={selectedTaskId}
+          onClose={() => setSelectedTaskId(null)}
+        />
+      )}
 
       {/* Animation styles */}
       <style jsx global>{`
         @keyframes fadeIn {
           from {
             opacity: 0;
+            transform: translateY(-10px);
           }
           to {
             opacity: 1;
+            transform: translateY(0);
           }
         }
         .animate-fadeIn {
