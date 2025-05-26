@@ -5,16 +5,10 @@ import Link from "next/link";
 import CustomTaskForm from "./CustomTaskForm";
 import AuthModal from "./AuthModal";
 import TaskModal from "./TaskModal";
-import SearchBar from "./SearchBar"; // Import the new SearchBar component
+import SearchBar from "./SearchBar";
 import { Task } from '@/app/shared/types/tasks';
 import { useTaskContext } from "@/app/context/TaskContext";
-
-// Dummy user for testing authentication
-const DUMMY_USER = {
-  username: "testuser",
-  // Don't expose password directly in code
-  password: process.env.NEXT_PUBLIC_DUMMY_PASSWORD || "demo_password" 
-};
+import { useAuth } from "@/app/context/AuthContext";
 
 interface NavbarProps {
   onCreateTask?: (task: any) => void;
@@ -22,29 +16,13 @@ interface NavbarProps {
 
 const Navbar = ({ onCreateTask }: NavbarProps) => {
   const { tasks } = useTaskContext();
+  const { isAuthenticated, username, login, logout } = useAuth();
   const [currentTask, setCurrentTask] = useState<Task | undefined>(undefined);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [username, setUsername] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
-  // Check authentication state from cookies on component mount
   useEffect(() => {
-    const authToken = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('authToken='));
-    
-    const storedUsername = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('username='))
-      ?.split('=')[1];
-    
-    setIsAuthenticated(!!authToken);
-    if (storedUsername) {
-      setUsername(decodeURIComponent(storedUsername));
-    }
-    
     // Check for showAuth parameter in URL (for redirects from middleware)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('showAuth') === 'true') {
@@ -60,7 +38,6 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
       onCreateTask(task);
     }
     // Only close the form if it's an edit operation or explicitly requested
-    // For new task creation, keep the form open so users can add multiple tasks
     if (task && task.id && !task.id.toString().startsWith('temp-')) {
       setShowTaskForm(false);
     }
@@ -75,36 +52,15 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
   };
   
   const handleLogin = async (username: string, password: string) => {
-    // Check against dummy user
-    if (username === DUMMY_USER.username && password === DUMMY_USER.password) {
-      // Set cookies for authentication
-      document.cookie = `authToken=dummy-token-${Date.now()}; path=/; max-age=${60*60*24*7}`;
-      document.cookie = `username=${encodeURIComponent(username)}; path=/; max-age=${60*60*24*7}`;
-      
-      setIsAuthenticated(true);
-      setUsername(username);
-      setShowAuthModal(false);
-    } else {
-      alert("Invalid credentials. Try username: testuser, password: password123");
-    }
-  };
-  
-  const handleLogout = () => {
-    // Clear auth cookies
-    document.cookie = "authToken=; path=/; max-age=0";
-    document.cookie = "username=; path=/; max-age=0";
-    setIsAuthenticated(false);
-    setUsername("");
+    // The actual token storage happens in AuthModal
+    // We just need to update our local state
+    login(username);
+    setShowAuthModal(false);
   };
   
   const handleRegister = (username: string, password: string) => {
-    // In a real app, you'd send this to your API
-    // For demo, we'll just authenticate the user right away
-    document.cookie = `authToken=dummy-token-${Date.now()}; path=/; max-age=${60*60*24*7}`;
-    document.cookie = `username=${encodeURIComponent(username)}; path=/; max-age=${60*60*24*7}`;
-    
-    setIsAuthenticated(true);
-    setUsername(username);
+    // The actual token storage happens in AuthModal
+    login(username);
     setShowAuthModal(false);
   };
 
@@ -157,7 +113,6 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
                     Hi, {username}
                   </span>
                   <button
-                    onClick={handleLogout}
                     className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium hover:opacity-90 transition-opacity"
                     aria-label="User Profile"
                     title="Click to logout"
@@ -181,12 +136,11 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
         </div>
       </nav>
 
-      {/* Task Creation Form */}
+      {/* Task Creation Form - Only show if authenticated */}
       {showTaskForm && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
           onClick={(e) => {
-            // Only close if clicking directly on the backdrop
             if (e.target === e.currentTarget) {
               setShowTaskForm(false);
             }

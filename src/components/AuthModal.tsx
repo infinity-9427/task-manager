@@ -2,7 +2,9 @@
 import { useState } from 'react';
 import { z } from 'zod';
 import clsx from 'clsx';
+import Cookies from 'js-cookie';
 import { useFetcher } from '../app/_hooks/useFetcher';
+import { useAuth } from '@/app/context/AuthContext';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -24,6 +26,7 @@ const loginSchema = z.object({
 type FormData = z.infer<typeof loginSchema>;
 
 export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: AuthModalProps) {
+  const { login } = useAuth();
   const [formData, setFormData] = useState<FormData>({
     username: '',
     password: '',
@@ -74,14 +77,39 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
       });
       
       if (response) {
-        // Store tokens in localStorage (or use a more secure method in production)
-        localStorage.setItem('accessToken', response.accessToken);
-        localStorage.setItem('refreshToken', response.refreshToken);
+        // Store tokens securely in cookies
+        Cookies.set('accessToken', response.accessToken, { 
+          expires: 1, // 1 day 
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict'
+        });
         
-        // Call the onLogin callback with successful authentication
+        Cookies.set('refreshToken', response.refreshToken, { 
+          expires: 7, // 7 days
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict'
+        });
+        
+        // Set authToken for middleware
+        Cookies.set('authToken', response.accessToken, {
+          expires: 1,
+          secure: process.env.NODE_ENV === 'production', 
+          sameSite: 'strict'
+        });
+        
+        // Store username in cookie
+        Cookies.set('username', formData.username, {
+          expires: 7,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict' 
+        });
+        
+        // Update auth context
+        login(formData.username);
+        
+        // Call onLogin callback
         onLogin(formData.username, formData.password);
       } else {
-        // If response is null, there was an error (handled by useFetcher)
         setErrors({
           auth: fetchError || 'Authentication failed. Please try again.'
         });
