@@ -182,7 +182,7 @@ export default function TaskBoard() {
             Tablero de tareas
           </h1>
           <p className="text-gray-600 mt-2">
-            Arrastra y suelta las tareas entre columnas para actualizar su
+            Crea, arrastra y suelta las tareas entre columnas para actualizar su
             estado.
           </p>
         </div>

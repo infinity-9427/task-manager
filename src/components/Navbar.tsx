@@ -146,7 +146,7 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
               aria-label="Add new task"
             >
               <span className="text-lg sm:mr-1">+</span>
-              <span className="hidden sm:inline">Agregar Tarea</span>
+              <span className="hidden sm:inline">Crear Tarea</span>
             </button>
 
             {/* Authentication */}
