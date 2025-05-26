@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface CustomAlertProps {
   message: string;
   type: 'success' | 'error' | 'warning';

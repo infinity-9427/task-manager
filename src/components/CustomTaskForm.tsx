@@ -1,7 +1,6 @@
 "use client";
 import { z } from "zod";
 import React, { useState, useEffect } from "react";
-import CustomAlert from "./CustomAlert";
 import {
   TaskStatus,
   Task,
@@ -36,10 +35,6 @@ export default function TaskForm({
     status: TaskStatus.PENDING,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [alertMessage, setAlertMessage] = useState("");
-  const [alertType, setAlertType] = useState<"success" | "error" | "warning">(
-    "success"
-  );
 
   useEffect(() => {
     if (action === "edit" && task) {
