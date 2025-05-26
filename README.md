@@ -34,6 +34,7 @@
 - **🔐 User Authentication**: Secure login to keep your tasks private
 - **🎨 Visual Indicators**: Color-coded labels clearly show task status and priority
 - **🌐 Spanish Localization**: Full Spanish language interface
+- **🔍 Task Search**: Quickly find tasks with the integrated search bar
 
 ## 🎬 Demo
 
