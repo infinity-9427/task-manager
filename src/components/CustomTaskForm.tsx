@@ -14,8 +14,8 @@ import clsx from "clsx";
 import { useFetcher } from "@/app/_hooks/useFetcher";
 
 const taskFormSchema = z.object({
-  title: z.string().min(1, "El título es obligatorio"),
-  description: z.string().min(1, "La descripción es obligatoria"),
+  title: z.string().min(1, "Title is required"),
+  description: z.string().min(1, "Description is required"),
   status: z
     .enum([TaskStatus.PENDING, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED])
     .default(TaskStatus.PENDING),
@@ -221,13 +221,13 @@ export default function TaskForm({
   const getPriorityLabel = (priority: Priority): string => {
     switch (priority) {
       case Priority.LOW:
-        return "Baja";
+        return "Low";
       case Priority.MEDIUM:
-        return "Media";
+        return "Medium";
       case Priority.HIGH:
-        return "Alta";
+        return "High";
       case Priority.URGENT:
-        return "Urgente";
+        return "Urgent";
       default:
         return "";
     }
@@ -244,7 +244,7 @@ export default function TaskForm({
           <div className="relative bg-white rounded-lg shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto animate-fadeIn">
             <div className="sticky top-0 bg-white z-10 px-6 py-4 border-b flex justify-between items-center">
               <h2 className={`text-xl font-bold ${scheme.titleColor}`}>
-                Editar Tarea
+                Edit Task
               </h2>
               <button
                 onClick={onClose}
@@ -316,7 +316,7 @@ export default function TaskForm({
 
                 <div>
                   <label className="block mb-2 font-semibold text-gray-800 text-sm md:text-base">
-                    Estado de la Tarea
+                    Task Status
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {(
@@ -340,10 +340,10 @@ export default function TaskForm({
                         )}
                       >
                         {statusOption === TaskStatus.PENDING
-                          ? "Pendiente"
+                          ? "Pending"
                           : statusOption === TaskStatus.IN_PROGRESS
-                          ? "En progreso"
-                          : "Completada"}
+                          ? "In Progress"
+                          : "Completed"}
                       </button>
                     ))}
                   </div>
@@ -385,7 +385,7 @@ export default function TaskForm({
                           : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-300"
                       )}
                     >
-                      Sin prioridad
+                     No priority
                     </button>
                   </div>
                 </div>
@@ -408,8 +408,8 @@ export default function TaskForm({
                     )}
                   >
                     {isLoading 
-                      ? "Procesando..." 
-                      : action === formAction.CREATE ? "Crear Tarea" : "Actualizar Tarea"}
+                      ? "Loading..." 
+                      : action === formAction.CREATE ? "Create Task" : "Update Task"}
                   </button>
                 </div>
               </form>
@@ -433,7 +433,7 @@ export default function TaskForm({
                 type="text"
                 value={formData.title}
                 onChange={handleChange}
-                placeholder="Escribe el título de la tarea"
+                placeholder="Enter the task title"
                 className={clsx(
                   "w-full p-3 border rounded-md text-gray-800 text-sm md:text-base transition-colors focus:outline-none",
                   errors.title ? "border-red-600" : "border-gray-400",
@@ -460,7 +460,7 @@ export default function TaskForm({
                 rows={4}
                 value={formData.description}
                 onChange={handleChange}
-                placeholder="Describe la tarea en detalle"
+                placeholder="Describe the task in detail"
                 className={clsx(
                   "w-full p-3 border border-gray-400 rounded-md text-gray-800 text-sm md:text-base transition-colors focus:outline-none resize-y",
                   "focus:ring-2 focus:ring-teal-200 focus:border-teal-600"
@@ -563,7 +563,7 @@ export default function TaskForm({
               >
                 {isLoading 
                   ? "Procesando..." 
-                  : action === formAction.CREATE ? "Crear Tarea" : "Actualizar Tarea"}
+                  : action === formAction.CREATE ? "Create Task" : "Update Task"}
               </button>
             </div>
           </form>

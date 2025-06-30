@@ -134,13 +134,13 @@ export default function TaskBoard() {
 
       switch (priority) {
         case Priority.LOW:
-          return "Baja";
+          return "Low";
         case Priority.MEDIUM:
-          return "Media";
+          return "Medium";
         case Priority.HIGH:
-          return "Alta";
+          return "High";
         case Priority.URGENT:
-          return "Urgente";
+          return "Urgent";
         default:
           return "";
       }
@@ -169,16 +169,16 @@ export default function TaskBoard() {
             <button
               onClick={() => handleEditTask(task)}
               className="text-gray-500 hover:text-indigo-700 p-1 rounded hover:bg-gray-100"
-              title="Editar Tarea"
+              title="Edit Task"
             >
-              <img src="/edit.svg" alt="Editar Tarea" className="w-4 h-4" />
+              <img src="/edit.svg" alt="Edit Task" className="w-4 h-4" />
             </button>
             <button
               onClick={() => handleDeleteTask(task)}
               className="text-gray-500 hover:text-red-600 hover:bg-gray-100 p-1 rounded"
-              title="Eliminar Tarea"
+              title="Delete Task"
             >
-              <img src="/delete.svg" alt="Eliminar Tarea" className="w-4 h-4" />
+              <img src="/delete.svg" alt="Delete Task" className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -325,8 +325,8 @@ export default function TaskBoard() {
 
       {deletingTask && (
         <DeleteAlertDialog
-          title="Eliminar Tarea"
-          message="¿Estás seguro de que deseas eliminar la tarea"
+          title="Delete Task"
+          message="Are you sure you want to delete the task"
           itemName={deletingTask.title}
           onDelete={async () => await handleDeleteConfirm(deletingTask.id)}
           onCancel={() => setDeletingTask(null)}

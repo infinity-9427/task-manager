@@ -55,19 +55,19 @@ const TaskModal = ({ taskId, onClose }: TaskModalProps) => {
   };
 
   const getPriorityLabel = (priority?: Priority): string => {
-    if (!priority) return "Sin prioridad";
+    if (!priority) return "No priority";
     
     switch (priority) {
       case Priority.LOW:
-        return "Baja";
+        return "Low";
       case Priority.MEDIUM:
-        return "Media";
+        return "Medium";
       case Priority.HIGH:
-        return "Alta";
+        return "High";
       case Priority.URGENT:
-        return "Urgente";
+        return "Urgent";
       default:
-        return "Sin prioridad";
+        return "No priority";
     }
   };
   

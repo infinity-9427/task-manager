@@ -108,7 +108,7 @@ export default function DeleteAlertDialog({
                     Deleting...
                   </>
                 ) : (
-                  'Eliminar'
+                  'Delete'
                 )}
               </button>
             </div>
