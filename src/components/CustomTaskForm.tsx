@@ -351,7 +351,7 @@ export default function TaskForm({
 
                 <div>
                   <label className="block mb-2 font-semibold text-gray-800 text-sm md:text-base">
-                    Prioridad
+                    Priority
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {(
@@ -511,7 +511,7 @@ export default function TaskForm({
             {/* Update priority buttons to display Spanish text */}
             <div>
               <label className="block mb-2 font-semibold text-gray-800 text-sm md:text-base">
-                Prioridad
+                Priority
               </label>
               <div className="flex flex-wrap gap-2">
                 {(
@@ -546,7 +546,7 @@ export default function TaskForm({
                       : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-300"
                   )}
                 >
-                  Sin prioridad
+                  No priority
                 </button>
               </div>
             </div>

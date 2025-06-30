@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Task, TaskStatus, Priority } from '@/app/shared/types/tasks';
 import { useTaskContext } from "@/app/context/TaskContext";
 
@@ -143,10 +144,12 @@ const TaskModal = ({ taskId, onClose }: TaskModalProps) => {
             <h3 className="text-sm font-medium text-gray-400 mb-2">Priority</h3>
             <div className="flex items-center">
               <span className={`px-3 py-1.5 rounded-full text-sm ${getPriorityColor(task.priority)} inline-flex items-center gap-2`}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                  <path d="M3 3h18v18H3V3z" fill="none"/>
-                  <path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z"/>
-                </svg>
+                <Image 
+                  src="/flag.svg" 
+                  alt="Priority flag" 
+                  width={16} 
+                  height={16}
+                />
                 {getPriorityLabel(task.priority)}
               </span>
             </div>

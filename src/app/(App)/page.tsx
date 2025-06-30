@@ -6,14 +6,21 @@ import {
   formAction,
   Priority,
 } from "@/app/shared/types/tasks";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useDragAndDrop } from "@/app/_hooks/useDragAndDrop";
 import { useFetcher } from "@/app/_hooks/useFetcher";
 import CustomTaskForm from "@/components/CustomTaskForm";
 import DeleteAlertDialog from "@/components/DeleteAlertDialog";
+import TaskFilter from "@/components/TaskFilter";
+import TeamChat from "@/components/TeamChat";
 
 export default function TaskBoard() {
   const { tasks, updateTaskStatus, deleteTask } = useTaskContext();
+  const [filters, setFilters] = useState({
+    statuses: [] as TaskStatus[],
+    priorities: [] as (Priority | "NONE")[],
+  });
+  
   const fetcher = useFetcher<{ success: boolean }>({
     baseUrl: process.env.NEXT_PUBLIC_API_URL,
   });
@@ -41,6 +48,26 @@ export default function TaskBoard() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
 
+  // Filter tasks based on current filters
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      // Filter by status - if no statuses selected, show all
+      if (filters.statuses.length > 0 && !filters.statuses.includes(task.status)) {
+        return false;
+      }
+
+      // Filter by priority - if no priorities selected, show all
+      if (filters.priorities.length > 0) {
+        const taskPriority = task.priority || "NONE";
+        if (!filters.priorities.includes(taskPriority)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [tasks, filters]);
+
   const handleUpdateTask = async (
     updatedTask: Partial<Task> & { id: string }
   ) => {
@@ -64,13 +91,13 @@ export default function TaskBoard() {
     }
   };
 
-  const pendingTasks = tasks.filter(
+  const pendingTasks = filteredTasks.filter(
     (task) => task.status === TaskStatus.PENDING
   );
-  const inProgressTasks = tasks.filter(
+  const inProgressTasks = filteredTasks.filter(
     (task) => task.status === TaskStatus.IN_PROGRESS
   );
-  const completedTasks = tasks.filter(
+  const completedTasks = filteredTasks.filter(
     (task) => task.status === TaskStatus.COMPLETED
   );
 
@@ -150,7 +177,6 @@ export default function TaskBoard() {
       <div
         draggable={!isBeingEdited}
         onDragStart={() => dragDrop.handleDragStart(task.id)}
-        onDragEnd={dragDrop.handleDragEnd}
         className={`bg-white rounded-lg shadow-md p-4 mb-3 relative ${
           isTaskLoading ? "opacity-60" : "hover:shadow-lg"
         } transition-all border border-gray-100 hover:border-gray-200`}
@@ -239,7 +265,7 @@ export default function TaskBoard() {
 
     return (
       <div
-        className={`${bgColor} rounded-lg shadow-md p-4 flex-1 min-w-[300px] border ${borderColor} 
+        className={`${bgColor} rounded-lg shadow-md p-4 w-full border ${borderColor} 
         ${
           dragDrop.isDraggedOver(columnId) ? "ring-2 ring-indigo-400" : ""
         } transition-all`}
@@ -275,7 +301,7 @@ export default function TaskBoard() {
 
   return (
     <div className="p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[2000px] mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800 inline-flex items-center justify-center">
             Task Manager
@@ -285,30 +311,51 @@ export default function TaskBoard() {
           </p>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-6 pb-8">
-          <Column
-            title="Pending"
-            tasks={pendingTasks}
-            status={TaskStatus.PENDING}
-            bgColor="bg-amber-50"
-            borderColor="border-amber-200"
-          />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Sidebar - Filters */}
+          <div className="lg:col-span-2 xl:col-span-2 2xl:col-span-2">
+            <TaskFilter 
+              onFilterChange={setFilters} 
+              activeFilters={filters} 
+            />
+          </div>
 
-          <Column
-            title="In Progress"
-            tasks={inProgressTasks}
-            status={TaskStatus.IN_PROGRESS}
-            bgColor="bg-blue-50"
-            borderColor="border-blue-200"
-          />
+          {/* Main Content - Task Board */}
+          <div className="lg:col-span-7 xl:col-span-8 2xl:col-span-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-8 h-fit">
+              <Column
+                title="Pending"
+                tasks={pendingTasks}
+                status={TaskStatus.PENDING}
+                bgColor="bg-amber-50"
+                borderColor="border-amber-200"
+              />
 
-          <Column
-            title="Completed"
-            tasks={completedTasks}
-            status={TaskStatus.COMPLETED}
-            bgColor="bg-emerald-50"
-            borderColor="border-emerald-200"
-          />
+              <Column
+                title="In Progress"
+                tasks={inProgressTasks}
+                status={TaskStatus.IN_PROGRESS}
+                bgColor="bg-blue-50"
+                borderColor="border-blue-200"
+              />
+
+              <Column
+                title="Completed"
+                tasks={completedTasks}
+                status={TaskStatus.COMPLETED}
+                bgColor="bg-emerald-50"
+                borderColor="border-emerald-200"
+              />
+            </div>
+          </div>
+
+          {/* Right Sidebar - Team Chat */}
+          <div className="lg:col-span-3 xl:col-span-2 2xl:col-span-2">
+            <TeamChat 
+              currentUserId="current-user-id" 
+              currentUserName="You"
+            />
+          </div>
         </div>
       </div>
 
@@ -317,9 +364,7 @@ export default function TaskBoard() {
           action={formAction.EDIT}
           task={editingTask}
           onClose={() => setEditingTask(null)}
-          onSubmit={handleUpdateTask}
-          isSubmitting={fetcher.isLoading}
-          error={fetcher.error}
+          onComplete={() => setEditingTask(null)}
         />
       )}
 
