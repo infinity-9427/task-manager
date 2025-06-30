@@ -80,11 +80,13 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
               <Image
                 src="/logo.webp"
                 alt="Task Manager Logo"
-                width={32}
-                height={32}
-                className="mr-2"
+                width={40}
+                height={40}
+                className="mr-3 group-hover:scale-105 transition-transform"
               />
-    
+              <span className="hidden sm:block text-lg font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
+                Task Manager
+              </span>
             </Link>
             </div>
 
@@ -112,8 +114,8 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
                   className="text-gray-600 group-hover:text-gray-800 transition-colors"
                 />
                 {/* Notification badge */}
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-800 rounded-full flex items-center justify-center">
-                  <span className="text-xs text-white  ">13</span>
+                <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center px-1">
+                  <span className="text-[10px] text-white font-bold leading-none">13</span>
                 </div>
               </button>
 
@@ -128,10 +130,10 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
                   alt="Add task" 
                   width={16} 
                   height={16} 
-                  className="mr-1.5 brightness-0 invert"
+                  className="mr-1.5 brightness-0 invert sm:inline hidden"
                 />
                 <span className="hidden sm:inline">Create</span>
-                <span className="sm:hidden">+</span>
+                <span className="sm:hidden text-lg font-bold">+</span>
               </button>
 
               {/* Authentication */}

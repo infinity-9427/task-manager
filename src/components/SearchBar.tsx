@@ -80,7 +80,7 @@ const SearchBar = ({ onTaskSelect, className = '' }: SearchBarProps) => {
       className={`relative ${className}`}
     >
       <div
-        className={`flex items-center bg-gray-800 rounded-md px-3 py-2 border ${
+        className={`flex items-center bg-gray-800 rounded-md px-3 py-1 border ${
           isSearchFocused ? "border-blue-400" : "border-transparent"
         }`}
       >

@@ -311,7 +311,7 @@ export default function TaskBoard() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 xl:gap-6">
           {/* Left Sidebar - Filters */}
           <div className="lg:col-span-2 xl:col-span-2 2xl:col-span-2">
             <TaskFilter 
@@ -321,8 +321,8 @@ export default function TaskBoard() {
           </div>
 
           {/* Main Content - Task Board */}
-          <div className="lg:col-span-7 xl:col-span-8 2xl:col-span-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-8 h-fit">
+          <div className="lg:col-span-6 xl:col-span-8 2xl:col-span-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 pb-8 h-fit">
               <Column
                 title="Pending"
                 tasks={pendingTasks}
@@ -350,11 +350,13 @@ export default function TaskBoard() {
           </div>
 
           {/* Right Sidebar - Team Chat */}
-          <div className="lg:col-span-3 xl:col-span-2 2xl:col-span-2">
-            <TeamChat 
-              currentUserId="current-user-id" 
-              currentUserName="You"
-            />
+          <div className="lg:col-span-4 xl:col-span-2 2xl:col-span-2 order-first lg:order-last">
+            <div className="sticky top-20">
+              <TeamChat 
+                currentUserId="current-user-id" 
+                currentUserName="You"
+              />
+            </div>
           </div>
         </div>
       </div>

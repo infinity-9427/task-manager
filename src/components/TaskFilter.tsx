@@ -69,12 +69,22 @@ export default function TaskFilter({ onFilterChange, activeFilters }: TaskFilter
         </div>
         <div className="flex items-center gap-2">
           {getActiveFilterCount() > 0 && (
-            <button
-              onClick={clearAllFilters}
-              className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors"
-            >
-              Clear
-            </button>
+            <div className="relative group">
+              <button
+                onClick={clearAllFilters}
+                className="p-1 hover:bg-gray-50 rounded transition-colors"
+                title="Clear all filters"
+              >
+                <Image 
+                  src="/filter-off.svg" 
+                  alt="Clear filters" 
+                  width={14} 
+                  height={14} 
+                  className="text-gray-400 hover:text-gray-600"
+                />
+              </button>
+   
+            </div>
           )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -108,8 +118,23 @@ export default function TaskFilter({ onFilterChange, activeFilters }: TaskFilter
                       type="checkbox"
                       checked={isStatusChecked(status)}
                       onChange={(e) => handleStatusChange(status, e.target.checked)}
-                      className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 transition-all"
+                      className="sr-only"
                     />
+                    <div className={`w-4 h-4 border-2 rounded transition-all ${
+                      isStatusChecked(status) 
+                        ? 'bg-blue-600 border-blue-600' 
+                        : 'bg-white border-gray-300 group-hover:border-gray-400'
+                    }`}>
+                      {isStatusChecked(status) && (
+                        <Image 
+                          src="/check-icon.svg" 
+                          alt="Checked" 
+                          width={12} 
+                          height={12} 
+                          className="text-white"
+                        />
+                      )}
+                    </div>
                   </div>
                   <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
                     {status === TaskStatus.PENDING
@@ -135,8 +160,23 @@ export default function TaskFilter({ onFilterChange, activeFilters }: TaskFilter
                     type="checkbox"
                     checked={isPriorityChecked("NONE")}
                     onChange={(e) => handlePriorityChange("NONE", e.target.checked)}
-                    className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 transition-all"
+                    className="sr-only"
                   />
+                  <div className={`w-4 h-4 border-2 rounded transition-all ${
+                    isPriorityChecked("NONE") 
+                      ? 'bg-blue-600 border-blue-600' 
+                      : 'bg-white border-gray-300 group-hover:border-gray-400'
+                  }`}>
+                    {isPriorityChecked("NONE") && (
+                      <Image 
+                        src="/check-icon.svg" 
+                        alt="Checked" 
+                        width={12} 
+                        height={12} 
+                        className="text-white"
+                      />
+                    )}
+                  </div>
                 </div>
                 <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
                   No Priority
@@ -149,8 +189,23 @@ export default function TaskFilter({ onFilterChange, activeFilters }: TaskFilter
                       type="checkbox"
                       checked={isPriorityChecked(priority)}
                       onChange={(e) => handlePriorityChange(priority, e.target.checked)}
-                      className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 transition-all"
+                      className="sr-only"
                     />
+                    <div className={`w-4 h-4 border-2 rounded transition-all ${
+                      isPriorityChecked(priority) 
+                        ? 'bg-blue-600 border-blue-600' 
+                        : 'bg-white border-gray-300 group-hover:border-gray-400'
+                    }`}>
+                      {isPriorityChecked(priority) && (
+                        <Image 
+                          src="/check-icon.svg" 
+                          alt="Checked" 
+                          width={12} 
+                          height={12} 
+                          className="text-white"
+                        />
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <svg className="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 24 24">

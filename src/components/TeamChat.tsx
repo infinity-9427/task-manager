@@ -198,16 +198,16 @@ export default function TeamChat({ currentUserId, currentUserName }: TeamChatPro
           height={16} 
           className="text-gray-500"
         />
-        <span className="font-medium text-gray-800">general</span>
-        <span className="text-xs text-gray-500">({onlineCount} online)</span>
+        <span className="font-medium text-gray-800 text-sm lg:text-base">general</span>
+        <span className="text-xs text-gray-500 hidden lg:inline">({onlineCount} online)</span>
       </div>
     );
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col h-[600px] max-h-[80vh]">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col h-[400px] sm:h-[450px] lg:h-[520px] xl:h-[600px] max-h-[80vh] w-full">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+      <div className="px-3 sm:px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
         {getChatTitle()}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
@@ -227,10 +227,10 @@ export default function TeamChat({ currentUserId, currentUserName }: TeamChatPro
       {!isCollapsed && (
         <>
           {/* Connected Users Bar - Show in both general and private chat */}
-          <div className="px-4 py-2 border-b border-gray-50 flex-shrink-0">
-            <div className="flex items-center gap-1 overflow-x-auto pb-1">
+          <div className="px-3 sm:px-4 py-2 border-b border-gray-50 flex-shrink-0">
+            <div className="flex items-center gap-1 lg:gap-1.5 xl:gap-2 overflow-x-auto pb-1 scrollbar-hide">
               {!selectedUser && (
-                <span className="text-xs text-gray-500 mr-2 flex-shrink-0">Online:</span>
+                <span className="text-xs text-gray-500 mr-2 flex-shrink-0 hidden lg:inline">Online:</span>
               )}
             
               {users.map((user) => (
@@ -241,7 +241,7 @@ export default function TeamChat({ currentUserId, currentUserName }: TeamChatPro
                   title={selectedUser?.id === user.id ? 'Currently chatting' : `Message ${user.name}`}
                 >
                   <div className="relative">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium transition-all ${
+                    <div className={`w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 xl:w-9 xl:h-9 rounded-full flex items-center justify-center text-white text-xs lg:text-sm font-medium transition-all ${
                       selectedUser?.id === user.id 
                         ? 'bg-gradient-to-br from-blue-500 to-blue-600 scale-110' 
                         : 'bg-gradient-to-br from-gray-400 to-gray-500 group-hover:from-blue-400 group-hover:to-blue-500 group-hover:scale-105'
@@ -249,7 +249,7 @@ export default function TeamChat({ currentUserId, currentUserName }: TeamChatPro
                       {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                     </div>
                     {user.isOnline && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border border-white"></div>
+                      <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 lg:w-2.5 lg:h-2.5 xl:w-3 xl:h-3 bg-green-500 rounded-full border border-white"></div>
                     )}
                   </div>
                 </button>
@@ -259,7 +259,7 @@ export default function TeamChat({ currentUserId, currentUserName }: TeamChatPro
           </div>
 
           {/* Messages */}
-          <div className="flex-1 p-4 space-y-3 overflow-y-auto min-h-0">
+          <div className="flex-1 p-3 sm:p-4 space-y-3 overflow-y-auto min-h-0">
             {getFilteredMessages().map((message) => (
               <div
                 key={message.id}
@@ -301,7 +301,7 @@ export default function TeamChat({ currentUserId, currentUserName }: TeamChatPro
           </div>
 
           {/* Message Input */}
-          <div className="p-3 border-t border-gray-100 flex-shrink-0">
+          <div className="p-2 sm:p-3 border-t border-gray-100 flex-shrink-0">
             <div className="flex gap-2">
               <div className="flex-1 relative">
                 <input
