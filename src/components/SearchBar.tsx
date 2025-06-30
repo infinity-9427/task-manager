@@ -86,7 +86,7 @@ const SearchBar = ({ onTaskSelect, className = '' }: SearchBarProps) => {
       >
         <input
           type="text"
-          placeholder="Buscar tareas..."
+          placeholder="Search tasks..."
           className="bg-transparent border-none outline-none text-white placeholder-gray-400 w-full text-sm sm:text-base"
           value={searchQuery}
           onChange={handleSearchChange}
@@ -132,7 +132,7 @@ const SearchBar = ({ onTaskSelect, className = '' }: SearchBarProps) => {
             </ul>
           ) : (
             <div className="px-4 py-3 text-center text-gray-400">
-              No se encontraron tareas para "{searchQuery}"
+              No tasks found for: "{searchQuery}"
             </div>
           )}
         </div>

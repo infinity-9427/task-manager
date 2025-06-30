@@ -1,6 +1,11 @@
 "use client";
 import { useTaskContext } from "@/app/context/TaskContext";
-import { TaskStatus, Task, formAction, Priority } from "@/app/shared/types/tasks";
+import {
+  TaskStatus,
+  Task,
+  formAction,
+  Priority,
+} from "@/app/shared/types/tasks";
 import { useState } from "react";
 import { useDragAndDrop } from "@/app/_hooks/useDragAndDrop";
 import { useFetcher } from "@/app/_hooks/useFetcher";
@@ -9,21 +14,23 @@ import DeleteAlertDialog from "@/components/DeleteAlertDialog";
 
 export default function TaskBoard() {
   const { tasks, updateTaskStatus, deleteTask } = useTaskContext();
-  const fetcher = useFetcher<{ success: boolean }>({ baseUrl: process.env.NEXT_PUBLIC_API_URL });
+  const fetcher = useFetcher<{ success: boolean }>({
+    baseUrl: process.env.NEXT_PUBLIC_API_URL,
+  });
   const dragDrop = useDragAndDrop<Task, TaskStatus>({
     onDropItem: async (taskId, newStatus) => {
       try {
         const result = await fetcher.put(`tasks/${taskId}`, {
-          status: newStatus
+          status: newStatus,
         });
-        
+
         if (result !== null && !fetcher.error) {
           updateTaskStatus(taskId, newStatus);
         } else {
-          throw new Error('Failed to update task status');
+          throw new Error("Failed to update task status");
         }
       } catch (error) {
-        console.error('Error updating task status:', error);
+        console.error("Error updating task status:", error);
         throw error;
       }
     },
@@ -33,8 +40,10 @@ export default function TaskBoard() {
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
-  
-  const handleUpdateTask = async (updatedTask: Partial<Task> & { id: string }) => {
+
+  const handleUpdateTask = async (
+    updatedTask: Partial<Task> & { id: string }
+  ) => {
     try {
       const result = await fetcher.put(`tasks/${updatedTask.id}`, {
         title: updatedTask.title,
@@ -42,15 +51,15 @@ export default function TaskBoard() {
         status: updatedTask.status,
         priority: updatedTask.priority,
       });
-      
+
       if (result !== null && !fetcher.error) {
         setEditingTask(null);
         return true;
       }
-      
-      throw new Error('Failed to update task');
+
+      throw new Error("Failed to update task");
     } catch (error) {
-      console.error('Error updating task:', error);
+      console.error("Error updating task:", error);
       return false;
     }
   };
@@ -76,16 +85,16 @@ export default function TaskBoard() {
   const handleDeleteConfirm = async (taskId: string) => {
     try {
       const result = await fetcher.delete(`tasks/${taskId}`);
-      
+
       if (result !== null || !fetcher.error) {
         deleteTask(taskId);
         setDeletingTask(null);
         return;
       }
-      
-      throw new Error('Failed to delete task');
+
+      throw new Error("Failed to delete task");
     } catch (error) {
-      console.error('Error deleting task:', error);
+      console.error("Error deleting task:", error);
     }
   };
 
@@ -110,19 +119,19 @@ export default function TaskBoard() {
     const getStatusLabel = (status: TaskStatus): string => {
       switch (status) {
         case TaskStatus.PENDING:
-          return "Pendiente";
+          return "Pending";
         case TaskStatus.IN_PROGRESS:
-          return "En Progreso";
+          return "In Progress";
         case TaskStatus.COMPLETED:
-          return "Completado";
+          return "Completed";
         default:
-          return "Desconocido";
+          return "Unknown";
       }
     };
 
     const getPriorityLabel = (priority?: Priority): string => {
       if (!priority) return "";
-      
+
       switch (priority) {
         case Priority.LOW:
           return "Baja";
@@ -175,7 +184,7 @@ export default function TaskBoard() {
         </div>
 
         <p className="text-gray-700 text-sm mb-3">{task.description}</p>
-        
+
         <div className="flex flex-col gap-2">
           <span
             className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -184,9 +193,9 @@ export default function TaskBoard() {
           >
             {getStatusLabel(task.status)}
           </span>
-          
+
           {task.priority && (
-            <span 
+            <span
               className={`px-3 py-1 rounded-full text-xs font-medium ${
                 priorityColors[task.priority]
               } border inline-flex items-center gap-1 w-fit`}
@@ -218,13 +227,13 @@ export default function TaskBoard() {
     const getEmptyMessage = () => {
       switch (status) {
         case TaskStatus.PENDING:
-          return "No hay tareas pendientes";
+          return "No pending tasks";
         case TaskStatus.IN_PROGRESS:
-          return "No hay tareas en progreso";
+          return "No tasks in progress";
         case TaskStatus.COMPLETED:
-          return "No hay tareas completadas";
+          return "No completed tasks";
         default:
-          return "No hay tareas";
+          return "No tasks";
       }
     };
 
@@ -241,10 +250,10 @@ export default function TaskBoard() {
         <h2 className="font-bold text-lg mb-4 flex items-center justify-between text-gray-800 border-b pb-2">
           <span className="text-gray-800">
             {status === TaskStatus.PENDING
-              ? "Pendiente"
+              ? "Pending"
               : status === TaskStatus.IN_PROGRESS
-              ? "En Progreso"
-              : "Completado"}
+              ? "In Progress"
+              : "Completed"}
           </span>
           <span className="bg-white rounded-full px-3 py-1 text-sm shadow-sm">
             {tasks.length}
@@ -269,17 +278,16 @@ export default function TaskBoard() {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800 inline-flex items-center justify-center">
-            Tablero de tareas
+            Task Manager
           </h1>
           <p className="text-gray-600 mt-2">
-            Crea, arrastra y suelta las tareas entre columnas para actualizar su
-            estado.
+            Create, drag, and drop tasks between columns to update their status.
           </p>
         </div>
 
         <div className="flex flex-col md:flex-row gap-6 pb-8">
           <Column
-            title="Pendiente"
+            title="Pending"
             tasks={pendingTasks}
             status={TaskStatus.PENDING}
             bgColor="bg-amber-50"
@@ -287,7 +295,7 @@ export default function TaskBoard() {
           />
 
           <Column
-            title="En Progreso"
+            title="In Progress"
             tasks={inProgressTasks}
             status={TaskStatus.IN_PROGRESS}
             bgColor="bg-blue-50"
@@ -295,7 +303,7 @@ export default function TaskBoard() {
           />
 
           <Column
-            title="Completado"
+            title="Completed"
             tasks={completedTasks}
             status={TaskStatus.COMPLETED}
             bgColor="bg-emerald-50"

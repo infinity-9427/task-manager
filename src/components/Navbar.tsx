@@ -44,11 +44,13 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
   };
   
   const handleTaskButtonClick = () => {
-    if (isAuthenticated) {
+    // if (isAuthenticated) {
+    //   setShowTaskForm(true);
+    // } else {
+    //   setShowAuthModal(true);
+    // }
+
       setShowTaskForm(true);
-    } else {
-      setShowAuthModal(true);
-    }
   };
   
   const handleLogin = async (username: string, password: string) => {
@@ -102,7 +104,7 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
               aria-label="Add new task"
             >
               <span className="text-lg sm:mr-1">+</span>
-              <span className="hidden sm:inline">Crear Tarea</span>
+              <span className="hidden sm:inline">Create task</span>
             </button>
 
             {/* Authentication */}
@@ -148,7 +150,7 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
         >
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-800">Crear Tarea</h2>
+              <h2 className="text-xl font-bold text-gray-800">Create task</h2>
               <button
                 className="text-gray-500 hover:text-gray-700"
                 onClick={() => setShowTaskForm(false)}
