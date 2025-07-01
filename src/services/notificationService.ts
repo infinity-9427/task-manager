@@ -7,7 +7,7 @@ import {
   ApiResponse 
 } from '@/types/api';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3200';
 
 class NotificationService {
   private async makeRequest<T>(
@@ -15,59 +15,36 @@ class NotificationService {
     options: RequestInit = {}
   ): Promise<T> {
     const token = this.getToken();
+    const url = `${API_BASE_URL}/api${endpoint}`;
     
-    // Primary: Use external API at localhost:3200
-    const externalUrl = `${API_BASE_URL}/api${endpoint}`;
+    const config: RequestInit = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...(options.headers || {})
+      },
+      ...options
+    };
+
+    const response = await fetch(url, config);
     
-    try {
-      const config: RequestInit = {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` }),
-          ...(options.headers || {})
-        },
-        ...options
-      };
-
-      const response = await fetch(externalUrl, config);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
+      const errorMessage = errorData.error || errorData.message || `HTTP ${response.status}`;
       
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
-        throw new Error(errorData.error || `HTTP ${response.status}`);
+      // Handle specific HTTP status codes
+      if (response.status === 401) {
+        throw new Error('Invalid token');
       }
-
-      if (response.status === 204) {
-        return {} as T;
-      }
-
-      return response.json();
-    } catch (error) {
-      // If external API fails, try local Next.js API routes as fallback
-      console.warn('External API unavailable, using local mock API:', error);
       
-      const localUrl = `/api${endpoint}`;
-      const config: RequestInit = {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` }),
-          ...(options.headers || {})
-        },
-        ...options
-      };
-
-      const response = await fetch(localUrl, config);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
-        throw new Error(errorData.error || `HTTP ${response.status}`);
-      }
-
-      if (response.status === 204) {
-        return {} as T;
-      }
-
-      return response.json();
+      throw new Error(errorMessage);
     }
+
+    if (response.status === 204) {
+      return {} as T;
+    }
+
+    return response.json();
   }
 
   private getToken(): string | null {

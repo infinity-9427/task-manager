@@ -36,8 +36,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUsername(response.user.username);
     } catch (error) {
       console.error('Failed to fetch user data:', error);
-      // If fetching user fails due to auth issues, logout
-      if (error instanceof Error && error.message.includes('401')) {
+      // If fetching user fails due to auth issues (401), logout
+      if (error instanceof Error && (
+        error.message.includes('401') || 
+        error.message.includes('Invalid token') ||
+        error.message.includes('Unauthorized')
+      )) {
         await logout();
       }
     }

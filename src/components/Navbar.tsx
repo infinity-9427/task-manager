@@ -38,6 +38,8 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
           setUnreadCount(notificationsData.notifications.filter((n: Notification) => !n.isRead).length);
         } catch (error) {
           console.error('Failed to load notifications:', error);
+          // Don't set notifications to prevent UI issues, just log the error
+          // The auth context will handle logout if needed
         }
       };
 
