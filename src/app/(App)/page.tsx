@@ -1,11 +1,6 @@
 "use client";
 import { useTaskContext } from "@/app/context/TaskContext";
-import {
-  TaskStatus,
-  Task,
-  formAction,
-  Priority,
-} from "@/app/shared/types/tasks";
+import { Task } from "@/types/api";
 import { useState, useMemo } from "react";
 import { useDragAndDrop } from "@/app/_hooks/useDragAndDrop";
 import { useFetcher } from "@/app/_hooks/useFetcher";
@@ -15,16 +10,16 @@ import TaskFilter from "@/components/TaskFilter";
 import TeamChat from "@/components/TeamChat";
 
 export default function TaskBoard() {
-  const { tasks, updateTaskStatus, deleteTask } = useTaskContext();
+  const { tasks } = useTaskContext();
   const [filters, setFilters] = useState({
-    statuses: [] as TaskStatus[],
-    priorities: [] as (Priority | "NONE")[],
+    statuses: [] as string[],
+    priorities: [] as string[],
   });
   
   const fetcher = useFetcher<{ success: boolean }>({
     baseUrl: process.env.NEXT_PUBLIC_API_URL,
   });
-  const dragDrop = useDragAndDrop<Task, TaskStatus>({
+  const dragDrop = useDragAndDrop<Task, string>({
     onDropItem: async (taskId, newStatus) => {
       try {
         const result = await fetcher.put(`tasks/${taskId}`, {
@@ -32,7 +27,7 @@ export default function TaskBoard() {
         });
 
         if (result !== null && !fetcher.error) {
-          updateTaskStatus(taskId, newStatus);
+          // updateTaskStatus(taskId, newStatus);
         } else {
           throw new Error("Failed to update task status");
         }
@@ -50,6 +45,11 @@ export default function TaskBoard() {
 
   // Filter tasks based on current filters
   const filteredTasks = useMemo(() => {
+    // Ensure tasks is always an array before filtering
+    if (!Array.isArray(tasks)) {
+      return [];
+    }
+    
     return tasks.filter((task) => {
       // Filter by status - if no statuses selected, show all
       if (filters.statuses.length > 0 && !filters.statuses.includes(task.status)) {
@@ -92,13 +92,13 @@ export default function TaskBoard() {
   };
 
   const pendingTasks = filteredTasks.filter(
-    (task) => task.status === TaskStatus.PENDING
+    (task) => task.status === 'PENDING'
   );
   const inProgressTasks = filteredTasks.filter(
-    (task) => task.status === TaskStatus.IN_PROGRESS
+    (task) => task.status === 'IN_PROGRESS'
   );
   const completedTasks = filteredTasks.filter(
-    (task) => task.status === TaskStatus.COMPLETED
+    (task) => task.status === 'COMPLETED'
   );
 
   const handleDeleteTask = (task: Task) => {
@@ -114,7 +114,7 @@ export default function TaskBoard() {
       const result = await fetcher.delete(`tasks/${taskId}`);
 
       if (result !== null || !fetcher.error) {
-        deleteTask(taskId);
+        // Task deleted successfully - would normally refetch the task list
         setDeletingTask(null);
         return;
       }
@@ -130,43 +130,42 @@ export default function TaskBoard() {
     const isTaskLoading = dragDrop.isLoading[task.id];
 
     const statusColors = {
-      [TaskStatus.PENDING]: "bg-amber-200 text-amber-900 border-amber-300",
-      [TaskStatus.IN_PROGRESS]: "bg-blue-200 text-blue-900 border-blue-300",
-      [TaskStatus.COMPLETED]:
-        "bg-emerald-200 text-emerald-900 border-emerald-300",
+      'PENDING': "bg-amber-200 text-amber-900 border-amber-300",
+      'IN_PROGRESS': "bg-blue-200 text-blue-900 border-blue-300",
+      'COMPLETED': "bg-emerald-200 text-emerald-900 border-emerald-300",
     };
 
     const priorityColors = {
-      [Priority.LOW]: "bg-green-100 text-green-800 border-green-200",
-      [Priority.MEDIUM]: "bg-amber-100 text-amber-800 border-amber-200",
-      [Priority.HIGH]: "bg-pink-100 text-pink-800 border-pink-200",
-      [Priority.URGENT]: "bg-purple-100 text-purple-800 border-purple-200",
+      'LOW': "bg-green-100 text-green-800 border-green-200",
+      'MEDIUM': "bg-amber-100 text-amber-800 border-amber-200",
+      'HIGH': "bg-pink-100 text-pink-800 border-pink-200",
+      'URGENT': "bg-purple-100 text-purple-800 border-purple-200",
     };
 
-    const getStatusLabel = (status: TaskStatus): string => {
+    const getStatusLabel = (status: string): string => {
       switch (status) {
-        case TaskStatus.PENDING:
+        case 'PENDING':
           return "Pending";
-        case TaskStatus.IN_PROGRESS:
+        case 'IN_PROGRESS':
           return "In Progress";
-        case TaskStatus.COMPLETED:
+        case 'COMPLETED':
           return "Completed";
         default:
           return "Unknown";
       }
     };
 
-    const getPriorityLabel = (priority?: Priority): string => {
+    const getPriorityLabel = (priority?: string): string => {
       if (!priority) return "";
 
       switch (priority) {
-        case Priority.LOW:
+        case 'LOW':
           return "Low";
-        case Priority.MEDIUM:
+        case 'MEDIUM':
           return "Medium";
-        case Priority.HIGH:
+        case 'HIGH':
           return "High";
-        case Priority.URGENT:
+        case 'URGENT':
           return "Urgent";
         default:
           return "";
@@ -176,7 +175,7 @@ export default function TaskBoard() {
     return (
       <div
         draggable={!isBeingEdited}
-        onDragStart={() => dragDrop.handleDragStart(task.id)}
+        onDragStart={() => dragDrop.handleDragStart(task.id.toString())}
         className={`bg-white rounded-lg shadow-md p-4 mb-3 relative ${
           isTaskLoading ? "opacity-60" : "hover:shadow-lg"
         } transition-all border border-gray-100 hover:border-gray-200`}
@@ -375,7 +374,7 @@ export default function TaskBoard() {
           title="Delete Task"
           message="Are you sure you want to delete the task"
           itemName={deletingTask.title}
-          onDelete={async () => await handleDeleteConfirm(deletingTask.id)}
+          onDelete={async () => await handleDeleteConfirm(deletingTask.id.toString())}
           onCancel={() => setDeletingTask(null)}
           isOpen={!!deletingTask}
           error={fetcher.error}

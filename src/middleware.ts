@@ -12,10 +12,20 @@ export function middleware(req: NextRequest) {
   const authToken = req.cookies.get("authToken")?.value;
   const isAuthenticated = !!authToken;
   
-  // Redirect protected page routes to home
+  // Skip authentication for login/register pages
+  if (req.nextUrl.pathname.startsWith("/login") || req.nextUrl.pathname.startsWith("/register")) {
+    return NextResponse.next();
+  }
+  
+  // Redirect protected page routes to login
   if (!isAuthenticated && protectedRoutes.some(route => req.nextUrl.pathname.startsWith(route))) {
-    const loginUrl = new URL("/", req.nextUrl.origin);
-    loginUrl.searchParams.set("showAuth", "true");
+    const loginUrl = new URL("/login", req.nextUrl.origin);
+    return NextResponse.redirect(loginUrl);
+  }
+  
+  // Redirect non-authenticated users from main app to login
+  if (!isAuthenticated && req.nextUrl.pathname === "/") {
+    const loginUrl = new URL("/login", req.nextUrl.origin);
     return NextResponse.redirect(loginUrl);
   }
   

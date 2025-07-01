@@ -3,12 +3,13 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import CustomTaskForm from "./CustomTaskForm";
-import AuthModal from "./AuthModal";
 import TaskModal from "./TaskModal";
 import SearchBar from "./SearchBar";
 import { Task } from '@/app/shared/types/tasks';
 import { useTaskContext } from "@/app/context/TaskContext";
 import { useAuth } from "@/app/context/AuthContext";
+import { notificationService, socketService } from "@/services";
+import type { Notification } from "@/types/api";
 
 interface NavbarProps {
   onCreateTask?: (task: any) => void;
@@ -16,22 +17,46 @@ interface NavbarProps {
 
 const Navbar = ({ onCreateTask }: NavbarProps) => {
   const { tasks } = useTaskContext();
-  const { isAuthenticated, username, login, logout } = useAuth();
+  const { isAuthenticated, username, user, logout } = useAuth();
   const [currentTask, setCurrentTask] = useState<Task | undefined>(undefined);
   const [showTaskForm, setShowTaskForm] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    // Check for showAuth parameter in URL (for redirects from middleware)
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('showAuth') === 'true') {
-      setShowAuthModal(true);
-      // Clean up the URL parameter
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
+    // Load notifications when authenticated
+    if (isAuthenticated) {
+      const loadNotifications = async () => {
+        try {
+          const notificationsData = await notificationService.getUserNotifications();
+          setNotifications(notificationsData.notifications);
+          setUnreadCount(notificationsData.notifications.filter((n: Notification) => !n.isRead).length);
+        } catch (error) {
+          console.error('Failed to load notifications:', error);
+        }
+      };
+
+      loadNotifications();
+
+      // Setup real-time notification listener
+      const handleNewNotification = (notification: Notification) => {
+        setNotifications(prev => [notification, ...prev]);
+        if (!notification.isRead) {
+          setUnreadCount(prev => prev + 1);
+        }
+      };
+
+      socketService.on('notificationReceived', handleNewNotification);
+
+      return () => {
+        socketService.off('notificationReceived', handleNewNotification);
+      };
+    } else {
+      setNotifications([]);
+      setUnreadCount(0);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const handleTaskCreated = (task: any) => {
     if (onCreateTask) {
@@ -53,17 +78,12 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
       setShowTaskForm(true);
   };
   
-  const handleLogin = async (username: string, password: string) => {
-    // The actual token storage happens in AuthModal
-    // We just need to update our local state
-    login(username);
-    setShowAuthModal(false);
-  };
-  
-  const handleRegister = (username: string, password: string) => {
-    // The actual token storage happens in AuthModal
-    login(username);
-    setShowAuthModal(false);
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   // First initial for avatar
@@ -114,9 +134,13 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
                   className="text-gray-600 group-hover:text-gray-800 transition-colors"
                 />
                 {/* Notification badge */}
-                <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center px-1">
-                  <span className="text-[10px] text-white font-bold leading-none">13</span>
-                </div>
+                {unreadCount > 0 && (
+                  <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center px-1">
+                    <span className="text-[10px] text-white font-bold leading-none">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  </div>
+                )}
               </button>
 
               {/* Add Task Button */}
@@ -144,6 +168,7 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
                       {username}
                     </span>
                     <button
+                      onClick={handleLogout}
                       className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-medium hover:scale-105 transition-transform shadow-sm"
                       aria-label="User Profile"
                       title="Click to logout"
@@ -153,8 +178,8 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
                   </div>
                 </div>
               ) : (
-                <button
-                  onClick={() => setShowAuthModal(true)}
+                <Link
+                  href="/login"
                   className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
                   aria-label="Sign In"
                 >
@@ -165,7 +190,7 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
                     height={20} 
                     className="text-gray-600"
                   />
-                </button>
+                </Link>
               )}
             </div>
           </div>
@@ -205,16 +230,6 @@ const Navbar = ({ onCreateTask }: NavbarProps) => {
             />
           </div>
         </div>
-      )}
-      
-      {/* Auth Modal */}
-      {showAuthModal && (
-        <AuthModal
-          isOpen={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
-          onLogin={handleLogin}
-          onRegister={handleRegister}
-        />
       )}
       
       {/* Task Detail Modal */}
