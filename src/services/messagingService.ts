@@ -94,7 +94,8 @@ class MessagingService {
   }
 
   async getUserConversations(): Promise<Conversation[]> {
-    return this.makeRequest<Conversation[]>('/messaging/conversations');
+    const response = await this.makeRequest<{ conversations: Conversation[] } | Conversation[]>('/messaging/conversations');
+    return Array.isArray(response) ? response : response.conversations || [];
   }
 
   async getConversationById(conversationId: number): Promise<Conversation> {

@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { messagingService, userService, socketService } from "@/services";
+import { messagingService, socketService } from "@/services";
+import userService from "@/services/userService";
 import type { User, Message, SendMessageRequest } from "@/types/api";
 import { useAuth } from "@/app/context/AuthContext";
 
@@ -50,12 +51,18 @@ export default function TeamChat({ currentUserId, currentUserName }: TeamChatPro
 
         // Load general conversations (or create one if none exists)
         const conversations = await messagingService.getUserConversations();
-        const generalConversation = conversations.find(c => c.type === 'GENERAL');
+        console.log('Loaded conversations:', conversations);
+        
+        const generalConversation = conversations?.find(c => c?.type === 'GENERAL');
         
         if (generalConversation) {
           const convMessages = await messagingService.getConversationMessages(generalConversation.id);
-          setMessages(convMessages.messages);
+          setMessages(convMessages.messages || []);
           setSelectedConversationId(generalConversation.id);
+        } else {
+          // No general conversation exists - we can work without it for now
+          console.log('No general conversation found, using direct messaging only');
+          setMessages([]);
         }
 
       } catch (err) {

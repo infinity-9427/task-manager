@@ -33,7 +33,7 @@ export default function TaskForm({
   onComplete,
   onClose,
 }: TaskFormProps) {
-  const { addTask, updateTask } = useTaskContext();
+  const { createTask, updateTask } = useTaskContext();
   
   const { post, put, data, error, isLoading } = useFetcher<Task>({
     baseUrl: process.env.NEXT_PUBLIC_API_URL
@@ -109,7 +109,7 @@ export default function TaskForm({
       const createdTask = await post('tasks', createData);
       
       if (createdTask) {
-        addTask(createdTask);
+        createTask(createdTask);
         
         if (onComplete) {
           onComplete(createdTask);
@@ -129,7 +129,7 @@ export default function TaskForm({
       const updatedTask = await put(`tasks/${task.id}`, taskData);
       
       if (updatedTask) {
-        updateTask(task.id, updatedTask);
+        updateTask(Number(task.id), updatedTask);
         
         if (onComplete) {
           onComplete(updatedTask);
@@ -409,7 +409,7 @@ export default function TaskForm({
                   >
                     {isLoading 
                       ? "Loading..." 
-                      : action === formAction.CREATE ? "Create Task" : "Update Task"}
+                      : action === formAction.EDIT ? "Update Task" : "Create Task"}
                   </button>
                 </div>
               </form>

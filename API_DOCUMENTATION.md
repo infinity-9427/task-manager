@@ -466,6 +466,51 @@ Authorization: Bearer <your_jwt_token>
 
 ## 👥 User Management Endpoints
 
+### Get All Users
+**GET** `/users`
+
+**Headers:** `Authorization: Bearer <token>` (required)
+
+**Query Parameters:**
+- `active` (optional): `true` to get only active users, `false` for all (default: `true`)
+- `role` (optional): Filter by role (`MEMBER`, `ADMIN`, `MODERATOR`)
+
+**Response (200):**
+```json
+[
+  {
+    "id": 9,
+    "username": "testuser123",
+    "email": "testuser123@example.com",
+    "firstName": "Test",
+    "lastName": "User",
+    "avatar": null,
+    "role": "MEMBER",
+    "isActive": true,
+    "isOnline": false,
+    "lastSeen": null,
+    "createdAt": "2025-07-01T12:40:52.209Z",
+    "updatedAt": "2025-07-01T12:40:52.209Z"
+  },
+  {
+    "id": 10,
+    "username": "anotheruser",
+    "email": "another@example.com",
+    "firstName": "Another",
+    "lastName": "User",
+    "avatar": null,
+    "role": "MEMBER",
+    "isActive": true,
+    "isOnline": true,
+    "lastSeen": "2025-07-01T13:00:00.000Z",
+    "createdAt": "2025-07-01T12:45:00.000Z",
+    "updatedAt": "2025-07-01T13:00:00.000Z"
+  }
+]
+```
+
+**Note:** Sensitive fields like passwords, tokens, and verification data are not included in the response for security reasons.
+
 ### Get User by ID
 **GET** `/users/{id}`
 

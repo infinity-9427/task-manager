@@ -1,6 +1,7 @@
 "use client";
 import { useTaskContext } from "@/app/context/TaskContext";
 import { Task } from "@/types/api";
+import { TaskStatus, Priority, formAction } from "@/app/shared/types/tasks";
 import { useState, useMemo } from "react";
 import { useDragAndDrop } from "@/app/_hooks/useDragAndDrop";
 import { useFetcher } from "@/app/_hooks/useFetcher";
@@ -12,8 +13,8 @@ import TeamChat from "@/components/TeamChat";
 export default function TaskBoard() {
   const { tasks } = useTaskContext();
   const [filters, setFilters] = useState({
-    statuses: [] as string[],
-    priorities: [] as string[],
+    statuses: [] as TaskStatus[],
+    priorities: [] as (Priority | "NONE")[],
   });
   
   const fetcher = useFetcher<{ success: boolean }>({
@@ -43,6 +44,16 @@ export default function TaskBoard() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
 
+  // Convert API Task to SharedTask for CustomTaskForm
+  const convertToSharedTask = (apiTask: Task): import("@/app/shared/types/tasks").Task => ({
+    id: apiTask.id.toString(),
+    title: apiTask.title,
+    description: apiTask.description || "",
+    status: apiTask.status as TaskStatus,
+    priority: apiTask.priority as Priority,
+    userId: apiTask.createdById,
+  });
+
   // Filter tasks based on current filters
   const filteredTasks = useMemo(() => {
     // Ensure tasks is always an array before filtering
@@ -52,13 +63,13 @@ export default function TaskBoard() {
     
     return tasks.filter((task) => {
       // Filter by status - if no statuses selected, show all
-      if (filters.statuses.length > 0 && !filters.statuses.includes(task.status)) {
+      if (filters.statuses.length > 0 && !filters.statuses.includes(task.status as TaskStatus)) {
         return false;
       }
 
       // Filter by priority - if no priorities selected, show all
       if (filters.priorities.length > 0) {
-        const taskPriority = task.priority || "NONE";
+        const taskPriority = (task.priority as Priority) || "NONE";
         if (!filters.priorities.includes(taskPriority)) {
           return false;
         }
@@ -363,7 +374,7 @@ export default function TaskBoard() {
       {editingTask && (
         <CustomTaskForm
           action={formAction.EDIT}
-          task={editingTask}
+          task={convertToSharedTask(editingTask)}
           onClose={() => setEditingTask(null)}
           onComplete={() => setEditingTask(null)}
         />
