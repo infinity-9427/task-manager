@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useState, useContext, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Cookies from 'js-cookie';
 import { authService, socketService } from '@/services';
 import type { User } from '@/types/api';
@@ -21,6 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [username, setUsername] = useState<string>("");
   const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
 
   const refreshUserData = async () => {
     if (!authService.isAuthenticated()) {
@@ -126,6 +128,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Disconnect socket
     socketService.updateToken(null);
+    
+    // Redirect to login page
+    router.push('/login');
   };
 
   return (
