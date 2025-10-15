@@ -16,8 +16,8 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: "Task App",
-  description: "A beautiful task management application",
+  title: "Professional Task Management Platform",
+  description: "Enterprise-grade task management solution with advanced data tables, nested task hierarchy, smart filtering, and team collaboration features.",
 }
 
 export default function RootLayout({

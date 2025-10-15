@@ -2,16 +2,20 @@
 
 import { memo } from 'react'
 import Link from 'next/link'
-import { APP_CONFIG, ROUTES } from '@/lib/constants'
+import { ROUTES } from '@/lib/constants'
+import { RiBarChartLine } from '@remixicon/react'
 
 const BrandLogo = memo(function BrandLogo() {
   return (
     <div className="flex-shrink-0">
       <Link 
         href={ROUTES.home} 
-        className="text-2xl font-bold text-purple-600 hover:text-purple-700 transition-colors"
+        className="flex items-center space-x-2 text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors"
       >
-        {APP_CONFIG.name}
+        <div className="bg-blue-600 text-white p-2 rounded-lg">
+          <RiBarChartLine className="w-5 h-5" />
+        </div>
+        <span>TaskPro</span>
       </Link>
     </div>
   )
