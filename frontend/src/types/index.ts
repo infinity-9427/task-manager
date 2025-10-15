@@ -3,20 +3,46 @@ export interface Task {
   title: string
   description?: string
   completed: boolean
+  status?: TaskStatus
   priority: TaskPriority
   dueDate?: string
   readonly createdAt: string
   updatedAt: string
+  parentId?: string
+  children?: Task[]
+  isExpanded?: boolean
+  assigneeId?: string
+  assignee?: User
 }
 
 export type TaskPriority = 'low' | 'medium' | 'high'
+
+export enum TaskStatus {
+  PENDING = 'pending',
+  IN_PROGRESS = 'in_progress', 
+  COMPLETED = 'completed'
+}
 
 export interface CreateTaskInput {
   title: string
   description?: string
   priority: TaskPriority
+  status: TaskStatus
   dueDate?: string
   completed: boolean
+  parentId?: string
+  assigneeId?: string
+}
+
+export interface SubTaskInput {
+  title: string
+  description?: string
+  priority?: TaskPriority
+  assigneeId?: string
+}
+
+export interface CreateTaskWithSubtasksInput extends CreateTaskInput {
+  subtasks?: SubTaskInput[]
 }
 
 export interface TaskUpdateInput extends Partial<Omit<CreateTaskInput, 'completed'>> {

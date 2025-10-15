@@ -6,7 +6,8 @@ import { SearchProvider } from "@/contexts/search-context"
 import { ErrorBoundary } from "@/components/error-boundary"
 import Header from "@/components/header"
 import TaskModal from "@/components/task-modal"
-import "./globals.css"
+import { Toaster } from "sonner"
+import "../globals.css"
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -37,6 +38,12 @@ export default function RootLayout({
                     {children}
                   </main>
                   <TaskModal />
+                  <Toaster 
+                    position="top-right"
+                    expand={false}
+                    richColors
+                    closeButton
+                  />
                 </div>
               </TaskProvider>
             </SearchProvider>
