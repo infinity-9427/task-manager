@@ -57,6 +57,8 @@ export const QUERY_KEYS = {
 
 export const ROUTES = {
   home: '/',
+  tasks: '/tasks',
+  chat: '/chat',
   login: '/login',
   register: '/register',
 } as const

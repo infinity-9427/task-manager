@@ -32,9 +32,9 @@ export default function RootLayout({
           <QueryProvider>
             <SearchProvider>
               <TaskProvider>
-                <div className="min-h-screen">
+                <div className="min-h-screen overflow-hidden">
                   <Header />
-                  <main className="relative">
+                  <main className="h-[calc(100vh-4rem)] overflow-hidden">
                     {children}
                   </main>
                   <TaskModal />
