@@ -1,7 +1,8 @@
 'use client'
 
-import { useTasks } from '@/hooks/use-tasks'
-import { TaskStatus } from '@/types'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/auth-context'
 import { 
   RiCheckboxCircleLine,
   RiTimeLine,
@@ -10,33 +11,52 @@ import {
   RiFilterLine,
   RiOrganizationChart,
   RiStackLine,
-  RiLineChartLine
+  RiLineChartLine,
+  RiChat3Line
 } from '@remixicon/react'
 import Link from 'next/link'
 
 export default function HomePage() {
-0
+  const router = useRouter()
+  const { isAuthenticated, isLoading, user } = useAuth()
 
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      // Redirect authenticated users to chat by default
+      router.push('/chat')
+    }
+  }, [isAuthenticated, isLoading, router])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 font-medium">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   const features = [
+    {
+      icon: RiChat3Line,
+      title: 'Real-time Messaging',
+      description: 'Instant messaging with general chat and private conversations',
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+    },
     {
       icon: RiTableLine,
       title: 'Advanced Data Table',
       description: 'Professional table interface with sorting, filtering, and bulk operations',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
     },
     {
       icon: RiOrganizationChart,
       title: 'Nested Task Hierarchy',
       description: 'Organize complex projects with parent tasks and unlimited subtask levels',
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-    },
-    {
-      icon: RiFilterLine,
-      title: 'Smart Filtering',
-      description: 'Advanced filters by status, priority, assignee, and custom search',
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
     },
@@ -58,23 +78,30 @@ export default function HomePage() {
 
             
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              Task
-              <span className="text-blue-600 block">Management Platform</span>
+              Messaging &
+              <span className="text-blue-600 block">Task Platform</span>
             </h1>
             
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Streamline your workflow with our comprehensive task management solution. 
-              Built for teams that demand efficiency, transparency, and results.
+              Connect with your team through real-time messaging and manage your tasks efficiently. 
+              Built for modern teams that value communication and productivity.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link 
-                href="/tasks"
+                href="/chat"
                 className="inline-flex items-center px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
-               Go to Dashboard
+                <RiChat3Line className="w-5 h-5 mr-2" />
+                Start Messaging
               </Link>
-              
+              <Link 
+                href="/tasks"
+                className="inline-flex items-center px-8 py-4 bg-white text-blue-600 border-2 border-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                <RiTableLine className="w-5 h-5 mr-2" />
+                View Tasks
+              </Link>
             </div>
           </div>
         </div>

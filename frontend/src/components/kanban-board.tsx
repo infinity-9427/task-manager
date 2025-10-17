@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import { useDragAndDrop } from '@formkit/drag-and-drop/react'
 import { RiCheckLine, RiTimeLine, RiDeleteBin6Line, RiFlagLine, RiArrowDownSLine, RiArrowRightSLine, RiEditLine, RiUser3Line, RiMoreLine } from '@remixicon/react'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,7 +22,7 @@ import TaskEditModal from '@/components/task-edit-modal'
 import { toast } from 'sonner'
 
 const COLUMN_CONFIG = {
-  [TaskStatus.PENDING]: {
+  [TaskStatus.TO_DO]: {
     title: 'To Do',
     className: 'bg-gray-50/80 border-gray-200/80 backdrop-blur-sm',
     headerClassName: 'text-gray-700 bg-gray-100/80',
@@ -68,7 +67,7 @@ export default function KanbanBoard() {
     if (task.status) return task.status
     // Fallback to completed field
     if (task.completed) return TaskStatus.COMPLETED
-    return TaskStatus.PENDING
+    return TaskStatus.TO_DO
   }
 
   // Check if all child tasks are completed
@@ -88,18 +87,18 @@ export default function KanbanBoard() {
     // First, create a map of all tasks
     const taskMap = new Map<string, Task>()
     tasks.forEach(task => {
-      taskMap.set(task.id, { ...task, children: [] })
+      taskMap.set(task.id.toString(), { ...task, children: [] })
     })
     
     // Then, build the hierarchy
     const rootTasks: Task[] = []
     
     tasks.forEach(task => {
-      const currentTask = taskMap.get(task.id)!
+      const currentTask = taskMap.get(task.id.toString())!
       
-      if (task.parentId && taskMap.has(task.parentId)) {
+      if (task.parentId && taskMap.has(task.parentId.toString())) {
         // This is a child task
-        const parent = taskMap.get(task.parentId)!
+        const parent = taskMap.get(task.parentId.toString())!
         if (!parent.children) parent.children = []
         parent.children.push(currentTask)
       } else {
@@ -115,7 +114,7 @@ export default function KanbanBoard() {
 
   // Memoize the tasksByStatus to prevent infinite re-renders
   const tasksByStatus = useMemo(() => ({
-    [TaskStatus.PENDING]: hierarchicalTasks.filter(task => getTaskStatus(task) === TaskStatus.PENDING),
+    [TaskStatus.TO_DO]: hierarchicalTasks.filter(task => getTaskStatus(task) === TaskStatus.TO_DO),
     [TaskStatus.IN_PROGRESS]: hierarchicalTasks.filter(task => getTaskStatus(task) === TaskStatus.IN_PROGRESS),
     [TaskStatus.COMPLETED]: hierarchicalTasks.filter(task => getTaskStatus(task) === TaskStatus.COMPLETED)
   }), [hierarchicalTasks])
@@ -134,33 +133,16 @@ export default function KanbanBoard() {
   }
 
 
-  // Set up drag and drop for each column with proper sync
-  const [pendingList, pendingTasks, setPendingTasks] = useDragAndDrop<HTMLDivElement, Task>(
-    tasksByStatus[TaskStatus.PENDING],
-    { 
-      group: 'kanban'
-    }
-  )
-  
-  const [inProgressList, inProgressTasks, setInProgressTasks] = useDragAndDrop<HTMLDivElement, Task>(
-    tasksByStatus[TaskStatus.IN_PROGRESS],
-    { 
-      group: 'kanban'
-    }
-  )
-  
-  const [completedList, completedTasks, setCompletedTasks] = useDragAndDrop<HTMLDivElement, Task>(
-    tasksByStatus[TaskStatus.COMPLETED],
-    { 
-      group: 'kanban'
-    }
-  )
+  // Simple state management for each column (no drag-and-drop)
+  const [pendingTasks, setPendingTasks] = useState<Task[]>(tasksByStatus[TaskStatus.TO_DO])
+  const [inProgressTasks, setInProgressTasks] = useState<Task[]>(tasksByStatus[TaskStatus.IN_PROGRESS])
+  const [completedTasks, setCompletedTasks] = useState<Task[]>(tasksByStatus[TaskStatus.COMPLETED])
 
   // Keep drag-and-drop state in sync with actual task data - only when tasks actually change
   const tasksSignature = JSON.stringify(allTasks.map(t => `${t.id}-${t.status}-${t.completed}`))
   useEffect(() => {
     if (lastSyncedTasksRef.current !== tasksSignature) {
-      setPendingTasks(tasksByStatus[TaskStatus.PENDING])
+      setPendingTasks(tasksByStatus[TaskStatus.TO_DO])
       setInProgressTasks(tasksByStatus[TaskStatus.IN_PROGRESS])
       setCompletedTasks(tasksByStatus[TaskStatus.COMPLETED])
       lastSyncedTasksRef.current = tasksSignature
@@ -181,7 +163,7 @@ export default function KanbanBoard() {
       
       // Determine which column the task is now in
       if (pendingTasks.includes(task)) {
-        newStatus = TaskStatus.PENDING
+        newStatus = TaskStatus.TO_DO
       } else if (inProgressTasks.includes(task)) {
         newStatus = TaskStatus.IN_PROGRESS
       } else if (completedTasks.includes(task)) {
@@ -204,16 +186,16 @@ export default function KanbanBoard() {
           description: 'Please complete all child tasks first.'
         })
         // Reset the task to its original position
-        resetDragAndDropState()
+        resetLocalState()
         return
       }
       
       // Check if moving from COMPLETED to PENDING (requires reset confirmation)
-      if (task.completed && newStatus === TaskStatus.PENDING) {
-        setResetTaskId(task.id)
+      if (task.completed && newStatus === TaskStatus.TO_DO) {
+        setResetTaskId(task.id.toString())
         setPendingResetStatus(newStatus)
         // Reset the drag state temporarily
-        resetDragAndDropState()
+        resetLocalState()
         return
       }
       
@@ -223,13 +205,13 @@ export default function KanbanBoard() {
     } catch (error) {
       console.error('Error updating task status:', error)
       toast.error('Failed to update task status')
-      resetDragAndDropState()
+      resetLocalState()
     }
   }
 
-  // Helper function to reset drag and drop state
-  const resetDragAndDropState = () => {
-    setPendingTasks(tasksByStatus[TaskStatus.PENDING])
+  // Helper function to reset local state to match server data
+  const resetLocalState = () => {
+    setPendingTasks(tasksByStatus[TaskStatus.TO_DO])
     setInProgressTasks(tasksByStatus[TaskStatus.IN_PROGRESS])
     setCompletedTasks(tasksByStatus[TaskStatus.COMPLETED])
   }
@@ -252,7 +234,7 @@ export default function KanbanBoard() {
     try {
       if (confirmed) {
         // Reset the task and all its children
-        const taskToReset = allTasks.find(t => t.id === resetTaskId)
+        const taskToReset = allTasks.find(t => t.id.toString() === resetTaskId)
         if (taskToReset) {
           resetTaskAndChildren(taskToReset, pendingResetStatus)
           toast.success('Task reset successfully', {
@@ -261,12 +243,12 @@ export default function KanbanBoard() {
         }
       } else {
         // User cancelled, just reset the drag state
-        resetDragAndDropState()
+        resetLocalState()
       }
     } catch (error) {
       console.error('Error resetting task:', error)
       toast.error('Failed to reset task')
-      resetDragAndDropState()
+      resetLocalState()
     } finally {
       setResetTaskId(null)
       setPendingResetStatus(null)
@@ -292,7 +274,7 @@ export default function KanbanBoard() {
       updateTaskMutation.mutate({
         id: child.id,
         updates: {
-          status: TaskStatus.PENDING,
+          status: TaskStatus.TO_DO,
           completed: false
         }
       })
@@ -303,7 +285,7 @@ export default function KanbanBoard() {
     if (!deleteTaskId) return
     
     try {
-      deleteTaskMutation.mutate(deleteTaskId, {
+      deleteTaskMutation.mutate(parseInt(deleteTaskId), {
         onSuccess: () => {
           setDeleteTaskId(null)
         },
@@ -353,7 +335,7 @@ export default function KanbanBoard() {
 
   const renderTaskGroup = (task: Task): React.ReactNode => {
     const isParent = task.children && task.children.length > 0
-    const isExpanded = expandedTasks.has(task.id)
+    const isExpanded = expandedTasks.has(task.id.toString())
     const canComplete = canMoveToCompleted(task)
     
     return (
@@ -364,7 +346,7 @@ export default function KanbanBoard() {
             {/* Expand/Collapse button for parent tasks */}
             {isParent ? (
               <button
-                onClick={() => toggleTaskExpansion(task.id)}
+                onClick={() => toggleTaskExpansion(task.id.toString())}
                 className="mt-1 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-all duration-200"
               >
                 {isExpanded ? (
@@ -436,22 +418,22 @@ export default function KanbanBoard() {
                   </div>
                   
                   <div className="flex items-center space-x-2">
-                    <span
-                      className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
-                        TASK_PRIORITIES[task.priority].color
-                      }`}
-                    >
-                      <RiFlagLine className="w-3 h-3 mr-1" />
-                      {TASK_PRIORITIES[task.priority].label}
-                    </span>
+                    {!task.parentId && (
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
+                          TASK_PRIORITIES[task.priority].color
+                        }`}
+                      >
+                        <RiFlagLine className="w-3 h-3 mr-1" />
+                        {TASK_PRIORITIES[task.priority].label}
+                      </span>
+                    )}
                     
-                    {task.assignee && (
+                    {!task.parentId && task.assignee && (
                       <div className="flex items-center space-x-1.5 text-xs text-gray-600">
-                        <img 
-                          src={task.assignee.avatar || ''} 
-                          alt={task.assignee.name}
-                          className="w-5 h-5 rounded-full border border-gray-200"
-                        />
+                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white text-xs font-bold border border-gray-200">
+                          {task.assignee.name?.charAt(0)?.toUpperCase() || task.assignee.email?.charAt(0)?.toUpperCase() || 'U'}
+                        </div>
                         <span className="font-medium">{task.assignee.name}</span>
                       </div>
                     )}
@@ -481,7 +463,7 @@ export default function KanbanBoard() {
                     onClick={(e) => {
                       e.stopPropagation()
                       try {
-                        setDeleteTaskId(task.id)
+                        setDeleteTaskId(task.id.toString())
                       } catch (error) {
                         console.error('Error opening delete modal:', error)
                         toast.error('Failed to open delete confirmation')
@@ -592,24 +574,14 @@ export default function KanbanBoard() {
                         </div>
                         
                         <div className="flex items-center space-x-2">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
-                              TASK_PRIORITIES[child.priority].color
-                            }`}
-                          >
-                            <RiFlagLine className="w-3 h-3 mr-1" />
-                            {TASK_PRIORITIES[child.priority].label}
-                          </span>
-                          
-                          {child.assignee && (
-                            <div className="flex items-center space-x-1 text-xs text-gray-600">
-                              <img 
-                                src={child.assignee.avatar || ''} 
-                                alt={child.assignee.name}
-                                className="w-4 h-4 rounded-full border border-gray-200"
-                              />
-                              <span className="font-medium">{child.assignee.name}</span>
-                            </div>
+                          {child.dueDate && (
+                            <span className="text-xs text-gray-500 flex items-center gap-1">
+                              <RiTimeLine className="w-3 h-3" />
+                              {new Date(child.dueDate).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -637,7 +609,7 @@ export default function KanbanBoard() {
                           onClick={(e) => {
                             e.stopPropagation()
                             try {
-                              setDeleteTaskId(child.id)
+                              setDeleteTaskId(child.id.toString())
                             } catch (error) {
                               console.error('Error opening child delete modal:', error)
                               toast.error('Failed to open delete confirmation')
@@ -695,8 +667,7 @@ export default function KanbanBoard() {
 
   const renderColumn = (
     status: TaskStatus,
-    tasks: Task[],
-    ref: React.RefObject<HTMLDivElement>
+    tasks: Task[]
   ) => {
     const config = COLUMN_CONFIG[status]
     
@@ -715,7 +686,6 @@ export default function KanbanBoard() {
         </div>
         
         <div
-          ref={ref}
           className="space-y-3 min-h-[200px] md:min-h-[300px] transition-all duration-200"
         >
           {tasks.map(renderTaskGroup)}
@@ -790,9 +760,9 @@ export default function KanbanBoard() {
       
       
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
-        {renderColumn(TaskStatus.PENDING, pendingTasks, pendingList)}
-        {renderColumn(TaskStatus.IN_PROGRESS, inProgressTasks, inProgressList)}
-        {renderColumn(TaskStatus.COMPLETED, completedTasks, completedList)}
+        {renderColumn(TaskStatus.TO_DO, pendingTasks)}
+        {renderColumn(TaskStatus.IN_PROGRESS, inProgressTasks)}
+        {renderColumn(TaskStatus.COMPLETED, completedTasks)}
       </div>
 
       <Dialog open={!!deleteTaskId} onOpenChange={() => setDeleteTaskId(null)}>
@@ -827,7 +797,7 @@ export default function KanbanBoard() {
           <DialogHeader>
             <DialogTitle>Reset Task Progress</DialogTitle>
             <DialogDescription>
-              You're moving a completed task back to "To Do". This will mark the task and all its subtasks as incomplete. Do you want to continue?
+              You&apos;re moving a completed task back to &quot;To Do&quot;. This will mark the task and all its subtasks as incomplete. Do you want to continue?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

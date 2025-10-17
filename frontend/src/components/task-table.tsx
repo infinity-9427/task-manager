@@ -52,12 +52,13 @@ import { useTasks, useDeleteTask, useToggleTask, useUpdateTask } from '@/hooks/u
 import { useSearchContext } from '@/contexts/search-context'
 import { useTaskSearch } from '@/hooks/use-search'
 import { TASK_PRIORITIES } from '@/lib/constants'
-import { Task, TaskStatus } from '@/types'
+import { Task, TaskStatus, TaskPriority } from '@/types'
 import TaskEditModal from '@/components/task-edit-modal'
+import TaskDetailModal from '@/components/task-detail-modal'
 import { toast } from 'sonner'
 
 const STATUS_CONFIG = {
-  [TaskStatus.PENDING]: {
+  [TaskStatus.TO_DO]: {
     label: 'To Do',
     color: 'bg-gray-100 text-gray-700 border-gray-200',
     dotColor: 'bg-gray-400'
@@ -85,29 +86,34 @@ export default function TaskTable() {
   
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null)
   const [editTask, setEditTask] = useState<Task | null>(null)
+  const [detailTask, setDetailTask] = useState<Task | null>(null)
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
-  const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set())
+  const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set())
   const [isBulkUpdating, setIsBulkUpdating] = useState(false)
 
-  // Use filtered tasks if searching, otherwise all tasks
-  const tasksToShow = isSearching ? filteredTasks : allTasks
+  // Use filtered tasks if searching, otherwise all tasks (with safe fallbacks)
+  const tasksToShow = isSearching ? (filteredTasks || []) : (allTasks || [])
 
   const getTaskStatus = (task: Task): TaskStatus => {
     if (task.status) return task.status
     if (task.completed) return TaskStatus.COMPLETED
-    return TaskStatus.PENDING
+    return TaskStatus.TO_DO
   }
 
   // Build proper parent-child hierarchy - memoized to prevent infinite loops
   const hierarchicalTasks = useMemo(() => {
     const buildTaskHierarchy = (tasks: Task[]): Task[] => {
-      const taskMap = new Map<string, Task>()
+      if (!tasks || !Array.isArray(tasks)) return []
+      
+      const taskMap = new Map<number, Task>()
       tasks.forEach(task => {
-        taskMap.set(task.id, { ...task, children: [] })
+        if (task?.id) {
+          taskMap.set(task.id, { ...task, children: [] })
+        }
       })
       
       const rootTasks: Task[] = []
@@ -219,14 +225,14 @@ export default function TaskTable() {
   const handleDeleteTask = () => {
     if (!deleteTaskId) return
     
-    deleteTaskMutation.mutate(deleteTaskId, {
+    deleteTaskMutation.mutate(parseInt(deleteTaskId), {
       onSuccess: () => {
         setDeleteTaskId(null)
       }
     })
   }
 
-  const handleSelectTask = (taskId: string, checked: boolean) => {
+  const handleSelectTask = (taskId: number, checked: boolean) => {
     setSelectedTasks(prev => {
       const newSet = new Set(prev)
       if (checked) {
@@ -297,7 +303,7 @@ export default function TaskTable() {
 
     if (successCount > 0) {
       const statusLabel = {
-        [TaskStatus.PENDING]: 'To Do',
+        [TaskStatus.TO_DO]: 'To Do',
         [TaskStatus.IN_PROGRESS]: 'In Progress', 
         [TaskStatus.COMPLETED]: 'Done'
       }[newStatus]
@@ -315,11 +321,32 @@ export default function TaskTable() {
     const task = row.original
     const isSelected = selectedTasks.has(task.id)
 
+    const handleRowClick = (e: React.MouseEvent) => {
+      // Don't open detail modal if clicking on interactive elements
+      const target = e.target as HTMLElement
+      if (
+        target.closest('button') || 
+        target.closest('input') || 
+        target.closest('select') ||
+        target.closest('[role="combobox"]') ||
+        target.closest('[role="button"]') ||
+        target.closest('[data-radix-popper-content-wrapper]') ||
+        target.closest('[role="menu"]') ||
+        target.closest('[role="menuitem"]')
+      ) {
+        return
+      }
+      setDetailTask(task)
+    }
+
     return (
-      <tr className={`border-b hover:bg-gray-50 transition-colors group ${
-        isSelected ? 'bg-blue-50 border-blue-200' : ''
-      }`}>
-        <td className="px-4 py-3 w-8">
+      <tr 
+        className={`border-b hover:bg-gray-50 transition-colors group cursor-pointer ${
+          isSelected ? 'bg-blue-50 border-blue-200' : ''
+        }`}
+        onClick={handleRowClick}
+      >
+        <td className="px-4 py-3 w-8" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
             checked={isSelected}
@@ -406,17 +433,6 @@ export default function TaskTable() {
                     </Badge>
                   )}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setEditTask(task)
-                  }}
-                  className="h-6 w-6 p-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <RiEditLine className="w-3 h-3" />
-                </Button>
               </div>
               {task.description && (
                 <div className={`text-xs mt-1 ${task.completed ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -458,7 +474,7 @@ export default function TaskTable() {
               </div>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={TaskStatus.PENDING}>
+              <SelectItem value={TaskStatus.TO_DO}>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-gray-400" />
                   To Do
@@ -495,7 +511,14 @@ export default function TaskTable() {
       ),
       accessorKey: 'priority',
       cell: ({ row }) => {
-        const priority = row.original.priority
+        const task = row.original
+        
+        // Hide priority for subtasks
+        if (task.parentId) {
+          return <span className="text-gray-400 text-sm">—</span>
+        }
+        
+        const priority = task.priority
         const config = TASK_PRIORITIES[priority]
         
         return (
@@ -510,17 +533,22 @@ export default function TaskTable() {
       id: 'assignee',
       header: 'Assignee',
       cell: ({ row }) => {
-        const assignee = row.original.assignee
+        const task = row.original
+        
+        // Hide assignee for subtasks
+        if (task.parentId) {
+          return <span className="text-gray-400 text-sm">—</span>
+        }
+        
+        const assignee = task.assignee
         
         if (!assignee) return <span className="text-gray-400 text-sm">Unassigned</span>
         
         return (
           <div className="flex items-center gap-2">
-            <img 
-              src={assignee.avatar || ''} 
-              alt={assignee.name}
-              className="w-6 h-6 rounded-full border border-gray-200"
-            />
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-600 to-orange-700 flex items-center justify-center text-white text-xs font-bold border border-gray-200">
+              {assignee.name?.charAt(0)?.toUpperCase() || assignee.email?.charAt(0)?.toUpperCase() || 'U'}
+            </div>
             <span className="text-sm font-medium">{assignee.name}</span>
           </div>
         )
@@ -565,27 +593,36 @@ export default function TaskTable() {
         const task = row.original
         
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <RiMoreLine className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setEditTask(task)}>
-                <RiEditLine className="mr-2 h-4 w-4" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={() => setDeleteTaskId(task.id)}
-                className="text-red-600 focus:text-red-600"
-              >
-                <RiDeleteBin6Line className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <RiMoreLine className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={(e) => {
+                  e.stopPropagation()
+                  setDetailTask(null)
+                  setTimeout(() => setEditTask(task), 100)
+                }}>
+                  <RiEditLine className="mr-2 h-4 w-4" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setDeleteTaskId(task.id.toString())
+                  }}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <RiDeleteBin6Line className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )
       },
     },
@@ -640,7 +677,7 @@ export default function TaskTable() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value={TaskStatus.PENDING}>To Do</SelectItem>
+            <SelectItem value={TaskStatus.TO_DO}>To Do</SelectItem>
             <SelectItem value={TaskStatus.IN_PROGRESS}>In Progress</SelectItem>
             <SelectItem value={TaskStatus.COMPLETED}>Done</SelectItem>
           </SelectContent>
@@ -652,9 +689,9 @@ export default function TaskTable() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All priorities</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="low">Low</SelectItem>
+            <SelectItem value={TaskPriority.HIGH}>High</SelectItem>
+            <SelectItem value={TaskPriority.MEDIUM}>Medium</SelectItem>
+            <SelectItem value={TaskPriority.LOW}>Low</SelectItem>
           </SelectContent>
         </Select>
 
@@ -677,7 +714,7 @@ export default function TaskTable() {
       {isSearching && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-800">
-            Showing {filteredData.length} result{filteredData.length !== 1 ? 's' : ''} for "{searchQuery}"
+            Showing {filteredData.length} result{filteredData.length !== 1 ? 's' : ''} for &quot;{searchQuery}&quot;
           </p>
         </div>
       )}
@@ -694,7 +731,7 @@ export default function TaskTable() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => handleBulkStatusChange(TaskStatus.PENDING)}
+                onClick={() => handleBulkStatusChange(TaskStatus.TO_DO)}
                 disabled={isBulkUpdating}
                 className="h-8 text-xs"
               >
@@ -766,15 +803,20 @@ export default function TaskTable() {
             ))}
           </tbody>
         </table>
-        {filteredData.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-gray-500 text-lg mb-2">No tasks yet</div>
-            <div className="text-gray-400 text-sm">
-              {isSearching 
-                ? `No tasks match "${searchQuery}". Try a different search term.`
-                : 'Create your first task to get started!'
-              }
+        {(!filteredData || filteredData.length === 0) && (
+          <div className="text-center py-16 px-4">
+            <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+              <RiTimeLine className="w-10 h-10 text-gray-400" />
             </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {isSearching ? 'No matching tasks' : 'No tasks yet'}
+            </h3>
+            <p className="text-gray-500 text-sm max-w-sm mx-auto leading-relaxed">
+              {isSearching 
+                ? `No tasks match "${searchQuery || ''}". Try adjusting your search criteria or filters.`
+                : 'Create your first task'
+              }
+            </p>
           </div>
         )}
       </div>
@@ -788,15 +830,15 @@ export default function TaskTable() {
               {(() => {
                 if (!deleteTaskId) return 'Are you sure you want to delete this task? This action cannot be undone.'
                 
-                const taskToDelete = filteredData.find(t => t.id === deleteTaskId)
+                const taskToDelete = filteredData.find(t => t.id.toString() === deleteTaskId)
                 if (!taskToDelete) return 'Are you sure you want to delete this task? This action cannot be undone.'
                 
-                const childTasks = filteredData.filter(t => t.parentId === deleteTaskId)
+                const childTasks = filteredData.filter(t => t.parentId?.toString() === deleteTaskId)
                 
                 if (childTasks.length > 0) {
                   return (
                     <div className="space-y-2">
-                      <p>Are you sure you want to delete "<strong>{taskToDelete.title}</strong>"?</p>
+                      <p>Are you sure you want to delete &quot;<strong>{taskToDelete.title}</strong>&quot;?</p>
                       <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                         <p className="text-sm text-red-800 font-medium">
                           ⚠️ This will also delete {childTasks.length} subtask{childTasks.length !== 1 ? 's' : ''}:
@@ -840,6 +882,22 @@ export default function TaskTable() {
         task={editTask}
         isOpen={!!editTask}
         onClose={() => setEditTask(null)}
+      />
+
+      {/* Detail Modal */}
+      <TaskDetailModal 
+        task={detailTask}
+        isOpen={!!detailTask}
+        onClose={() => setDetailTask(null)}
+        onEdit={(task) => {
+          setDetailTask(null)
+          // Small delay to ensure detail modal closes before edit modal opens
+          setTimeout(() => setEditTask(task), 100)
+        }}
+        onDelete={(taskId) => {
+          setDetailTask(null)
+          setDeleteTaskId(taskId)
+        }}
       />
     </>
   )

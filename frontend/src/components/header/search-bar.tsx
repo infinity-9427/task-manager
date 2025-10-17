@@ -15,7 +15,7 @@ import { Task } from '@/types'
 export default function SearchBar() {
   const { openCreateModal } = useTaskContext()
   const { searchQuery, setSearchQuery } = useSearchContext()
-  const { data: allTasks = [] } = useTasks()
+  const allTasks = useTasks()?.data || []
   const [isDropdownVisible, setIsDropdownVisible] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)

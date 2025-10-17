@@ -25,7 +25,7 @@ export default function TasksPage() {
                     </div>
                     <div>
                       <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Tasks</h1>
-                      <p className="text-xs sm:text-sm text-gray-600">Organize and track your team's work</p>
+                      <p className="text-xs sm:text-sm text-gray-600">Organize and track your team&apos;s work</p>
                     </div>
                   </div>
                   

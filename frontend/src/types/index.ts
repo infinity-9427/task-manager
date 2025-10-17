@@ -1,5 +1,5 @@
 export interface Task {
-  readonly id: string
+  readonly id: number
   title: string
   description?: string
   completed: boolean
@@ -8,49 +8,55 @@ export interface Task {
   dueDate?: string
   readonly createdAt: string
   updatedAt: string
-  parentId?: string
+  parentId?: number
   children?: Task[]
+  subtasks?: Task[]
   isExpanded?: boolean
-  assigneeId?: string
+  assigneeId?: number
   assignee?: User
+  createdBy?: User
 }
 
-export type TaskPriority = 'low' | 'medium' | 'high'
+export enum TaskPriority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT'
+}
 
 export enum TaskStatus {
-  PENDING = 'pending',
-  IN_PROGRESS = 'in_progress', 
-  COMPLETED = 'completed'
+  TO_DO = 'TO_DO',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED'
 }
 
 export interface CreateTaskInput {
   title: string
   description?: string
   priority: TaskPriority
-  status: TaskStatus
+  status?: TaskStatus
   dueDate?: string
-  completed: boolean
-  parentId?: string
-  assigneeId?: string
+  completed?: boolean
+  parentId?: number
+  assigneeId?: number
 }
 
 export interface SubTaskInput {
   title: string
   description?: string
-  priority?: TaskPriority
-  assigneeId?: string
+  dueDate?: string
 }
 
 export interface CreateTaskWithSubtasksInput extends CreateTaskInput {
   subtasks?: SubTaskInput[]
 }
 
-export interface TaskUpdateInput extends Partial<Omit<CreateTaskInput, 'completed'>> {
+export interface TaskUpdateInput extends Partial<CreateTaskInput> {
   completed?: boolean
 }
 
 export interface User {
-  readonly id: string
+  readonly id: number
   name: string
   email: string
   avatar?: string | null

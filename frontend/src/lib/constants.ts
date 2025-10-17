@@ -7,60 +7,62 @@ export const APP_CONFIG = {
 } as const
 
 export const TASK_PRIORITIES: Record<TaskPriority, { label: string; color: string }> = {
-  low: {
+  [TaskPriority.LOW]: {
     label: 'Low',
     color: 'text-green-600 bg-green-100',
   },
-  medium: {
+  [TaskPriority.MEDIUM]: {
     label: 'Medium', 
     color: 'text-yellow-600 bg-yellow-100',
   },
-  high: {
+  [TaskPriority.HIGH]: {
     label: 'High',
     color: 'text-red-600 bg-red-100',
   },
+  [TaskPriority.URGENT]: {
+    label: 'Urgent',
+    color: 'text-purple-600 bg-purple-100',
+  },
 } as const
 
-export const DUMMY_USERS: User[] = [
-  {
-    id: 'user-1',
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face'
-  },
-  {
-    id: 'user-2', 
-    name: 'Jane Smith',
-    email: 'jane.smith@example.com',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b5bc?w=40&h=40&fit=crop&crop=face'
-  },
-  {
-    id: 'user-3',
-    name: 'Mike Johnson', 
-    email: 'mike.johnson@example.com',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face'
-  },
-  {
-    id: 'user-4',
-    name: 'Sarah Wilson',
-    email: 'sarah.wilson@example.com', 
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face'
-  }
-] as const
+// All user data now comes from the database via authentication
 
-export const CURRENT_USER_ID = 'user-1' as const
+export const API_ENDPOINTS = {
+  auth: {
+    login: '/api/auth/login',
+    register: '/api/auth/register',
+    refresh: '/api/auth/refresh',
+    logout: '/api/auth/logout',
+  },
+  tasks: {
+    list: '/api/tasks',
+    create: '/api/tasks',
+    update: (id: string) => `/api/tasks/${id}`,
+    delete: (id: string) => `/api/tasks/${id}`,
+    byId: (id: string) => `/api/tasks/${id}`,
+  },
+  messages: {
+    general: '/api/messages/general',
+    direct: (userId: string) => `/api/messages/direct/${userId}`,
+    users: '/api/messages/users',
+    send: '/api/messages',
+  },
+  users: '/api/users',
+} as const
 
 export const QUERY_KEYS = {
   tasks: ['tasks'] as const,
   users: ['users'] as const,
+  messages: ['messages'] as const,
 } as const
 
 export const ROUTES = {
   home: '/',
   tasks: '/tasks',
   chat: '/chat',
-  login: '/login',
-  register: '/register',
+  auth: '/auth',
+  login: '/auth',
+  register: '/auth',
 } as const
 
 // Search configuration

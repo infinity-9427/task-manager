@@ -10,6 +10,15 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
 import {
   Select,
   SelectContent,
@@ -17,10 +26,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useUpdateTask, useTasks } from '@/hooks/use-tasks'
-import { TaskPriority, Task, TaskStatus } from '@/types'
-import { DUMMY_USERS } from '@/lib/constants'
+import { useUpdateTask, useCreateTask, useDeleteTask, useTasks } from '@/hooks/use-tasks'
+import { TaskPriority, Task, TaskStatus, SubTaskInput } from '@/types'
+import { useAuth } from '@/contexts/auth-context'
+import { useMessagingUsers } from '@/lib/messages-api'
 import { toast } from 'sonner'
+import { 
+  RiCloseLine, 
+  RiSaveLine, 
+  RiAddLine, 
+  RiDeleteBin6Line,
+  RiEditLine,
+  RiFlagLine,
+  RiCalendarLine,
+  RiUser3Line,
+  RiCheckLine
+} from '@remixicon/react'
 
 interface TaskEditModalProps {
   task: Task | null
@@ -29,31 +50,79 @@ interface TaskEditModalProps {
 }
 
 export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalProps) {
-  const { data: allTasks = [] } = useTasks()
+  const { user } = useAuth()
+  const { data: usersData } = useMessagingUsers()
+  const users = usersData?.users || []
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [priority, setPriority] = useState<TaskPriority>('medium')
-  const [status, setStatus] = useState<TaskStatus>(TaskStatus.PENDING)
+  const [priority, setPriority] = useState<TaskPriority>(TaskPriority.MEDIUM)
+  const [status, setStatus] = useState<TaskStatus>(TaskStatus.TO_DO)
   const [dueDate, setDueDate] = useState('')
-  const [parentId, setParentId] = useState<string>('none')
-  const [assigneeId, setAssigneeId] = useState<string>('unassigned')
+  const [assigneeId, setAssigneeId] = useState<string>('')
+  const [subtasks, setSubtasks] = useState<(SubTaskInput & { id?: number, isExisting?: boolean })[]>([])
+  const [deletedSubtaskIds, setDeletedSubtaskIds] = useState<number[]>([])
 
   const updateTaskMutation = useUpdateTask()
-
-  // Get only parent tasks (tasks without a parentId) excluding current task
-  const parentTasks = allTasks.filter(t => !t.parentId && t.id !== task?.id)
+  const createSubtaskMutation = useCreateTask()
+  const deleteSubtaskMutation = useDeleteTask()
 
   useEffect(() => {
     if (task) {
       setTitle(task.title)
       setDescription(task.description || '')
       setPriority(task.priority)
-      setStatus(task.status || (task.completed ? TaskStatus.COMPLETED : TaskStatus.PENDING))
+      setStatus(task.status || (task.completed ? TaskStatus.COMPLETED : TaskStatus.TO_DO))
       setDueDate(task.dueDate ? task.dueDate.split('T')[0] : '')
-      setParentId(task.parentId || 'none')
-      setAssigneeId(task.assigneeId || 'unassigned')
+      setAssigneeId(task.assigneeId?.toString() || '')
+      
+      // Load existing subtasks
+      const existingSubtasks = (task.children || []).map(subtask => ({
+        id: subtask.id,
+        title: subtask.title,
+        description: subtask.description || '',
+        dueDate: subtask.dueDate ? subtask.dueDate.split('T')[0] : '',
+        isExisting: true
+      }))
+      setSubtasks(existingSubtasks)
+      setDeletedSubtaskIds([])
     }
   }, [task])
+
+  // Helper functions
+  const getAssigneeDisplayName = (userId: string): string => {
+    const userOption = users.find(u => u.id.toString() === userId)
+    if (!userOption) return 'Select assignee'
+    
+    const isCurrentUser = user?.id !== undefined && userOption.id.toString() === user.id.toString()
+    return isCurrentUser && users.length === 1 
+      ? 'Myself' 
+      : isCurrentUser 
+        ? `${userOption.name || userOption.email} (You)`
+        : userOption.name || userOption.email
+  }
+
+  const addSubtask = () => {
+    setSubtasks([...subtasks, { 
+      title: '', 
+      description: '',
+      dueDate: '',
+      isExisting: false
+    }])
+  }
+
+  const removeSubtask = (index: number) => {
+    const subtask = subtasks[index]
+    if (subtask.isExisting && subtask.id) {
+      setDeletedSubtaskIds([...deletedSubtaskIds, subtask.id])
+    }
+    setSubtasks(subtasks.filter((_, i) => i !== index))
+  }
+
+  const updateSubtask = (index: number, field: keyof SubTaskInput, value: any) => {
+    const updated = [...subtasks]
+    updated[index] = { ...updated[index], [field]: value }
+    setSubtasks(updated)
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -81,11 +150,54 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
           status,
           dueDate: dueDate || undefined,
           completed: status === TaskStatus.COMPLETED,
-          parentId: parentId && parentId !== 'none' ? parentId : undefined,
-          assigneeId: assigneeId === 'unassigned' ? undefined : assigneeId,
+          assigneeId: parseInt(assigneeId),
         }
       }, {
-        onSuccess: () => {
+        onSuccess: async () => {
+          // Handle subtask deletions
+          for (const deletedId of deletedSubtaskIds) {
+            try {
+              await deleteSubtaskMutation.mutateAsync(deletedId)
+            } catch (error) {
+              console.error(`Failed to delete subtask ${deletedId}:`, error)
+            }
+          }
+
+          // Handle subtask updates and creations
+          for (const subtask of subtasks) {
+            if (!subtask.title.trim()) continue
+
+            try {
+              if (subtask.isExisting && subtask.id) {
+                // Update existing subtask (no assigneeId for subtasks)
+                await updateTaskMutation.mutateAsync({
+                  id: subtask.id,
+                  updates: {
+                    title: subtask.title.trim(),
+                    description: subtask.description?.trim() || undefined,
+                    dueDate: subtask.dueDate || undefined,
+                    // No assigneeId or priority changes for subtasks
+                  }
+                })
+              } else {
+                // Create new subtask (no assigneeId for subtasks)
+                await createSubtaskMutation.mutateAsync({
+                  title: subtask.title.trim(),
+                  description: subtask.description?.trim() || undefined,
+                  priority: TaskPriority.MEDIUM, // Default priority for subtasks
+                  status: TaskStatus.TO_DO,
+                  completed: false,
+                  parentId: task!.id,
+                  dueDate: subtask.dueDate || undefined,
+                  // No assigneeId - subtasks don't have assignees
+                })
+              }
+            } catch (error) {
+              console.error('Failed to save subtask:', error)
+              toast.error(`Failed to save subtask: ${subtask.title}`)
+            }
+          }
+          
           onClose()
         },
         onError: (error) => {
@@ -103,164 +215,305 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-gray-900">
-            Edit Task
-          </DialogTitle>
-          {task && (
-            <div className="text-sm text-gray-500 mt-1">
-              {task.parentId ? (
-                <span>
-                  Subtask of: <strong>{allTasks.find(t => t.id === task.parentId)?.title || 'Unknown'}</strong>
-                </span>
-              ) : (
-                <span>Parent task</span>
-              )}
+      <DialogContent className="sm:max-w-4xl max-h-[95vh] overflow-y-auto p-0" showCloseButton={false}>
+        {/* Header Section */}
+        <div className="sticky top-0 z-10 bg-white border-b">
+          <DialogHeader className="p-6 pb-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 mb-2">
+                  <DialogTitle className="text-2xl font-bold text-gray-900">
+                    Edit Task
+                  </DialogTitle>
+                  <RiEditLine className="w-6 h-6 text-blue-600" />
+                </div>
+                {task && (
+                  <div className="text-sm text-gray-600">
+                    {task.parentId ? (
+                      <Badge variant="outline" className="text-xs">
+                        Subtask
+                      </Badge>
+                    ) : (
+                      <span>Editing main task and its subtasks</span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="hover:bg-gray-100 transition-colors"
+              >
+                <RiCloseLine className="h-5 w-5" />
+              </Button>
             </div>
-          )}
-        </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="edit-title" className="block text-sm font-medium text-gray-700 mb-1">
-              Title *
-            </label>
-            <Input
-              id="edit-title"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter task title..."
-              required
-              className="w-full"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <Textarea
-              id="edit-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter task description..."
-              rows={3}
-              className="w-full resize-none"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="edit-parentTask" className="block text-sm font-medium text-gray-700 mb-1">
-              Parent Task (Optional)
-            </label>
-            <Select value={parentId} onValueChange={setParentId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a parent task (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No parent task</SelectItem>
-                {parentTasks.map((parentTask) => (
-                  <SelectItem key={parentTask.id} value={parentTask.id}>
-                    {parentTask.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="edit-status" className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <Select value={status} onValueChange={(value: TaskStatus) => setStatus(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={TaskStatus.PENDING}>Pending</SelectItem>
-                  <SelectItem value={TaskStatus.IN_PROGRESS}>In Progress</SelectItem>
-                  <SelectItem value={TaskStatus.COMPLETED}>Completed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label htmlFor="edit-priority" className="block text-sm font-medium text-gray-700 mb-1">
-                Priority
-              </label>
-              <Select value={priority} onValueChange={(value: TaskPriority) => setPriority(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="edit-assignee" className="block text-sm font-medium text-gray-700 mb-1">
-              Assignee
-            </label>
-            <Select value={assigneeId} onValueChange={setAssigneeId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select assignee" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="unassigned">No assignee</SelectItem>
-                {DUMMY_USERS.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    <div className="flex items-center space-x-2">
-                      <img 
-                        src={user.avatar || ''} 
-                        alt={user.name}
-                        className="w-5 h-5 rounded-full"
-                      />
-                      <span>{user.name}</span>
+          </DialogHeader>
+        </div>
+        {/* Content Section */}
+        <div className="p-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Main Task Information Accordion */}
+            <Accordion type="multiple" defaultValue={["basic", "details", "subtasks"]} className="space-y-4">
+              
+              {/* Basic Information */}
+              <AccordionItem value="basic" className="border rounded-lg">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-gray-50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <RiEditLine className="w-5 h-5 text-blue-600" />
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                    <span className="text-lg font-semibold">Basic Information</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="edit-title" className="block text-sm font-semibold text-gray-700 mb-2">
+                        Title *
+                      </label>
+                      <Input
+                        id="edit-title"
+                        type="text"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Enter task title..."
+                        required
+                        className="w-full h-10"
+                      />
+                    </div>
 
-          <div>
-            <label htmlFor="edit-dueDate" className="block text-sm font-medium text-gray-700 mb-1">
-              Due Date
-            </label>
-            <Input
-              id="edit-dueDate"
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="w-full"
-            />
-          </div>
+                    <div>
+                      <label htmlFor="edit-description" className="block text-sm font-semibold text-gray-700 mb-2">
+                        Description
+                      </label>
+                      <Textarea
+                        id="edit-description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Enter task description..."
+                        rows={4}
+                        className="w-full resize-none"
+                      />
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
 
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={updateTaskMutation.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={!isFormValid || updateTaskMutation.isPending}
-              className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
-            >
-              {updateTaskMutation.isPending ? 'Updating...' : 'Update Task'}
-            </Button>
-          </div>
-        </form>
+              {/* Task Details */}
+              <AccordionItem value="details" className="border rounded-lg">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-gray-50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <RiFlagLine className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <span className="text-lg font-semibold">Task Details</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label htmlFor="edit-status" className="block text-sm font-semibold text-gray-700 mb-2">
+                        Status
+                      </label>
+                      <Select value={status} onValueChange={(value: TaskStatus) => setStatus(value)}>
+                        <SelectTrigger className="h-10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={TaskStatus.TO_DO}>To Do</SelectItem>
+                          <SelectItem value={TaskStatus.IN_PROGRESS}>In Progress</SelectItem>
+                          <SelectItem value={TaskStatus.COMPLETED}>Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="edit-priority" className="block text-sm font-semibold text-gray-700 mb-2">
+                        Priority
+                      </label>
+                      <Select value={priority} onValueChange={(value: TaskPriority) => setPriority(value)}>
+                        <SelectTrigger className="h-10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={TaskPriority.LOW}>Low</SelectItem>
+                          <SelectItem value={TaskPriority.MEDIUM}>Medium</SelectItem>
+                          <SelectItem value={TaskPriority.HIGH}>High</SelectItem>
+                          <SelectItem value={TaskPriority.URGENT}>Urgent</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="edit-assignee" className="block text-sm font-semibold text-gray-700 mb-2">
+                        Assignee
+                      </label>
+                      <Select value={assigneeId} onValueChange={setAssigneeId}>
+                        <SelectTrigger className="h-10">
+                          <SelectValue placeholder="Select assignee">
+                            {assigneeId ? getAssigneeDisplayName(assigneeId) : 'Select assignee'}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {users.map((userOption) => {
+                            const isCurrentUser = user?.id !== undefined && userOption.id.toString() === user.id.toString()
+                            const displayName = isCurrentUser && users.length === 1 
+                              ? 'Myself' 
+                              : isCurrentUser 
+                                ? `${userOption.name || userOption.email} (You)`
+                                : userOption.name || userOption.email
+                            
+                            return (
+                              <SelectItem key={userOption.id} value={userOption.id.toString()}>
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-violet-600 to-violet-700 flex items-center justify-center text-white text-xs font-bold">
+                                    {userOption.name?.charAt(0)?.toUpperCase() || userOption.email?.charAt(0)?.toUpperCase() || 'U'}
+                                  </div>
+                                  <span>{displayName}</span>
+                                </div>
+                              </SelectItem>
+                            )
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="edit-dueDate" className="block text-sm font-semibold text-gray-700 mb-2">
+                        Due Date
+                      </label>
+                      <Input
+                        id="edit-dueDate"
+                        type="date"
+                        value={dueDate}
+                        onChange={(e) => setDueDate(e.target.value)}
+                        className="w-full h-10"
+                      />
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* Subtasks Management */}
+              {!task?.parentId && (
+                <AccordionItem value="subtasks" className="border rounded-lg">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-gray-50">
+                    <div className="flex items-center justify-between w-full mr-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                          <RiCheckLine className="w-5 h-5 text-green-600" />
+                        </div>
+                        <span className="text-lg font-semibold">Subtasks</span>
+                      </div>
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 font-medium">
+                        {subtasks.length} subtask{subtasks.length !== 1 ? 's' : ''}
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 pb-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-gray-600">
+                          Manage subtasks for this task
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={addSubtask}
+                          className="text-green-600 border-green-300 hover:bg-green-50"
+                        >
+                          <RiAddLine className="h-4 w-4 mr-1" />
+                          Add Subtask
+                        </Button>
+                      </div>
+                      
+                      {subtasks.length > 0 && (
+                        <div className="space-y-3">
+                          {subtasks.map((subtask, index) => (
+                            <Card key={index} className="border border-gray-200">
+                              <CardContent className="p-4">
+                                <div className="space-y-3">
+                                  <div className="flex items-start justify-between">
+                                    <span className="text-sm font-medium text-gray-700">
+                                      Subtask {index + 1}
+                                      {subtask.isExisting && (
+                                        <Badge variant="outline" className="ml-2 text-xs">
+                                          Existing
+                                        </Badge>
+                                      )}
+                                    </span>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeSubtask(index)}
+                                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                    >
+                                      <RiDeleteBin6Line className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                  
+                                  <Input
+                                    placeholder="Subtask title..."
+                                    value={subtask.title}
+                                    onChange={(e) => updateSubtask(index, 'title', e.target.value)}
+                                    className="text-sm"
+                                  />
+                                  
+                                  <Textarea
+                                    placeholder="Subtask description (optional)..."
+                                    value={subtask.description || ''}
+                                    onChange={(e) => updateSubtask(index, 'description', e.target.value)}
+                                    rows={2}
+                                    className="text-sm resize-none"
+                                  />
+                                  
+                                  <div>
+                                    <Input
+                                      type="date"
+                                      placeholder="Due date (optional)..."
+                                      value={subtask.dueDate || ''}
+                                      onChange={(e) => updateSubtask(index, 'dueDate', e.target.value)}
+                                      className="text-sm"
+                                    />
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+            </Accordion>
+
+            {/* Action Buttons */}
+            <Separator />
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={updateTaskMutation.isPending || createSubtaskMutation.isPending || deleteSubtaskMutation.isPending}
+                className="px-6"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={!isFormValid || updateTaskMutation.isPending || createSubtaskMutation.isPending || deleteSubtaskMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-6"
+              >
+                <RiSaveLine className="h-4 w-4 mr-2" />
+                {updateTaskMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   )
