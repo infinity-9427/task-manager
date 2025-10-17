@@ -104,11 +104,25 @@ export default function TaskTable() {
     return TaskStatus.TO_DO
   }
 
-  // Build proper parent-child hierarchy - memoized to prevent infinite loops
+  // Use existing hierarchy from API response or build from flat tasks
   const hierarchicalTasks = useMemo(() => {
+    if (!tasksToShow || !Array.isArray(tasksToShow)) return []
+    
+    // Check if tasks already have subtasks/children from API
+    const tasksWithHierarchy = tasksToShow.filter(task => 
+      !task.parentId && ((task.subtasks && task.subtasks.length > 0) || (task.children && task.children.length > 0))
+    )
+    
+    if (tasksWithHierarchy.length > 0) {
+      // Use API-provided hierarchy, ensure children property exists
+      return tasksToShow.filter(task => !task.parentId).map(task => ({
+        ...task,
+        children: task.subtasks || task.children || []
+      }))
+    }
+    
+    // Fallback: build hierarchy from flat task list
     const buildTaskHierarchy = (tasks: Task[]): Task[] => {
-      if (!tasks || !Array.isArray(tasks)) return []
-      
       const taskMap = new Map<number, Task>()
       tasks.forEach(task => {
         if (task?.id) {

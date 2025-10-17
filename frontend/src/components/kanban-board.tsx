@@ -82,9 +82,24 @@ export default function KanbanBoard() {
     return areAllChildrenCompleted(task)
   }
 
-  // Build proper parent-child hierarchy
+  // Build proper parent-child hierarchy or use API-provided hierarchy
   const buildTaskHierarchy = (tasks: Task[]): Task[] => {
-    // First, create a map of all tasks
+    if (!tasks || !Array.isArray(tasks)) return []
+    
+    // Check if tasks already have subtasks from API
+    const tasksWithSubtasks = tasks.filter(task => 
+      !task.parentId && task.subtasks && task.subtasks.length > 0
+    )
+    
+    if (tasksWithSubtasks.length > 0) {
+      // Use API-provided hierarchy
+      return tasks.filter(task => !task.parentId).map(task => ({
+        ...task,
+        children: task.subtasks || task.children || []
+      }))
+    }
+    
+    // Fallback: build hierarchy from flat task list
     const taskMap = new Map<string, Task>()
     tasks.forEach(task => {
       taskMap.set(task.id.toString(), { ...task, children: [] })

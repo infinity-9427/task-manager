@@ -6,16 +6,16 @@ export interface Message {
   id: string
   content: string
   type: 'GENERAL' | 'DIRECT'
-  senderId: string
-  receiverId?: string
+  senderId: string | number
+  receiverId?: string | number
   sender: {
-    id: string
+    id: string | number
     name: string
     email: string
     avatar?: string
   }
   receiver?: {
-    id: string
+    id: string | number
     name: string
     email: string
     avatar?: string
@@ -35,7 +35,7 @@ export interface MessagesResponse {
 }
 
 export interface User {
-  id: string
+  id: string | number
   name: string
   email: string
   avatar?: string

@@ -77,7 +77,7 @@ export default function ChatSidebar({ isMobile = false }: ChatSidebarProps) {
     }
 
     const handleTyping = (data: { userId: string, email: string }) => {
-      if (data.userId !== user?.id?.toString()) {
+      if (data.userId?.toString() !== user?.id?.toString()) {
         setTypingUsers(prev => new Set([...prev, data.email]))
         
         // Clear typing indicator after 3 seconds
@@ -213,7 +213,7 @@ export default function ChatSidebar({ isMobile = false }: ChatSidebarProps) {
             </div>
           ) : (
             messages.map((message) => {
-            const isCurrentUser = message?.senderId === user?.id?.toString()
+            const isCurrentUser = message?.senderId?.toString() === user?.id?.toString()
             const senderColor = getUserColor(message?.sender?.name || 'Unknown')
             
             return (
@@ -326,7 +326,7 @@ export default function ChatSidebar({ isMobile = false }: ChatSidebarProps) {
           </div>
         ) : (
           messages.map((message) => {
-          const isCurrentUser = message?.senderId === user?.id?.toString()
+          const isCurrentUser = message?.senderId?.toString() === user?.id?.toString()
           const senderColor = getUserColor(message?.sender?.name || 'Unknown')
           
           return (

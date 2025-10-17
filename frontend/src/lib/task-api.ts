@@ -159,8 +159,13 @@ class TaskAPI {
 
   async getTasks(params?: TaskQueryParams): Promise<{ tasks: Task[]; pagination: unknown }> {
     try {
-      const searchParams = this.buildSearchParams(params)
-      const endpoint = `/tasks${searchParams ? `?${searchParams}` : ''}`
+      // Always include subtasks in the response
+      const paramsWithSubtasks = {
+        ...params,
+        include: 'subtasks'
+      }
+      const searchParams = this.buildSearchParams(paramsWithSubtasks)
+      const endpoint = `/tasks${searchParams ? `?${searchParams}` : '?include=subtasks'}`
       
       const data = await this.makeRequest<ApiResponse<Task>>(endpoint)
       
@@ -191,7 +196,8 @@ class TaskAPI {
     try {
       this.validateTaskId(id)
       
-      const data = await this.makeRequest<ApiResponse<Task>>(`/tasks/${id}`)
+      // Include subtasks when fetching a single task
+      const data = await this.makeRequest<ApiResponse<Task>>(`/tasks/${id}?include=subtasks`)
       
       if (!data.task) {
         throw new TaskAPIError('Task not found', 404, 'TASK_NOT_FOUND')

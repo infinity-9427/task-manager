@@ -3,6 +3,8 @@ import { Server as SocketIOServer, Socket } from 'socket.io';
 import { verifyToken } from '@/src/infrastructure/config/jwt';
 import { SocketEvents, MessageType } from '@/src/shared/types/enums';
 import { Message } from '@/src/domain/message/entities/Message';
+import { getActiveDataSource } from '@/src/shared/utils/database';
+import { User } from '@/src/domain/user/entities/User';
 
 export class SocketManager {
   private io: SocketIOServer;
@@ -108,6 +110,110 @@ export class SocketManager {
         };
 
         if (data.receiverId) {
+          // Direct message stop typing
+          socket.to(`user_${data.receiverId}`).emit(SocketEvents.USER_STOP_TYPING, typingData);
+        } else {
+          // General chat stop typing
+          socket.to('general').emit(SocketEvents.USER_STOP_TYPING, typingData);
+        }
+      });
+
+      // Handle message sending via WebSocket
+      socket.on('message:send', async (data: { content: string, type: 'GENERAL' | 'DIRECT', receiverId?: string }) => {
+        try {
+          const { content, type, receiverId } = data;
+          const senderId = socket.data.userId;
+
+          if (!content || !type) {
+            socket.emit('error', { message: 'Content and type are required' });
+            return;
+          }
+
+          if (type === 'DIRECT' && !receiverId) {
+            socket.emit('error', { message: 'Receiver ID is required for direct messages' });
+            return;
+          }
+
+          const dataSource = getActiveDataSource();
+          const messageRepo = dataSource.getRepository(Message);
+          const userRepo = dataSource.getRepository(User);
+
+          // Validate receiver for direct messages
+          if (type === 'DIRECT') {
+            const receiver = await userRepo.findOne({ where: { id: parseInt(receiverId!) } });
+            if (!receiver) {
+              socket.emit('error', { message: 'Receiver not found' });
+              return;
+            }
+          }
+
+          // Create message
+          const message = type === 'DIRECT' 
+            ? Message.createDirectMessage(content, senderId, parseInt(receiverId!))
+            : Message.createGeneralMessage(content, senderId);
+
+          const savedMessage = await messageRepo.save(message);
+          const messageWithSender = await messageRepo.findOne({
+            where: { id: savedMessage.id },
+            relations: ['sender', 'receiver']
+          });
+
+          if (messageWithSender) {
+            // Emit message to appropriate recipients
+            this.emitMessage(messageWithSender);
+            
+            // Send confirmation to sender
+            socket.emit(SocketEvents.MESSAGE_SENT, {
+              event: SocketEvents.MESSAGE_SENT,
+              message: {
+                id: messageWithSender.id,
+                content: messageWithSender.content,
+                type: messageWithSender.type,
+                sender: {
+                  id: messageWithSender.sender.id,
+                  name: messageWithSender.sender.name,
+                  email: messageWithSender.sender.email
+                },
+                receiver: messageWithSender.receiver ? {
+                  id: messageWithSender.receiver.id,
+                  name: messageWithSender.receiver.name,
+                  email: messageWithSender.receiver.email
+                } : null,
+                createdAt: messageWithSender.createdAt
+              }
+            });
+          }
+        } catch (error) {
+          console.error('❌ Error handling message:send:', error);
+          socket.emit('error', { message: 'Failed to send message' });
+        }
+      });
+
+      // Handle typing events
+      socket.on('typing:start', (data?: { receiverId?: string }) => {
+        const typingData = {
+          userId: socket.data.userId,
+          email: socket.data.email,
+          isTyping: true
+        };
+
+        if (data?.receiverId) {
+          // Direct message typing
+          socket.to(`user_${data.receiverId}`).emit(SocketEvents.USER_TYPING, typingData);
+        } else {
+          // General chat typing
+          socket.to('general').emit(SocketEvents.USER_TYPING, typingData);
+        }
+      });
+
+      socket.on('typing:stop', (data?: { receiverId?: string }) => {
+        const typingData = {
+          userId: socket.data.userId,
+          email: socket.data.email,
+          isTyping: false
+        };
+
+        if (data?.receiverId) {
           // Direct message stop typing
           socket.to(`user_${data.receiverId}`).emit(SocketEvents.USER_STOP_TYPING, typingData);
         } else {

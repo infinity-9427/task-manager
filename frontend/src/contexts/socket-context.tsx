@@ -101,7 +101,7 @@ export default function SocketProvider({ children }: SocketProviderProps) {
       console.log('📨 New message received:', data)
       
       // Show notification for new messages
-      if (data.message.senderId !== user.id) {
+      if (data.message.senderId?.toString() !== user.id?.toString()) {
         toast.info(`New message from ${data.message.sender.name}`, {
           description: data.message.content.length > 50 
             ? data.message.content.substring(0, 50) + '...'
@@ -180,13 +180,13 @@ export default function SocketProvider({ children }: SocketProviderProps) {
 
   const joinRoom = (room: string) => {
     if (socket && isConnected) {
-      socket.emit('room:join', { room })
+      socket.emit('join', room)
     }
   }
 
   const leaveRoom = (room: string) => {
     if (socket && isConnected) {
-      socket.emit('room:leave', { room })
+      socket.emit('leave', room)
     }
   }
 
