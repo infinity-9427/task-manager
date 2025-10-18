@@ -237,16 +237,17 @@ export default function TaskModal() {
         closeCreateModal()
       }
     }}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto" showCloseButton={false}>
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-lg font-semibold text-gray-900">
+      <DialogContent className="w-[95vw] sm:w-full sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto" showCloseButton={false}>
+        <DialogHeader className="p-3 sm:p-6">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="text-base sm:text-lg font-semibold text-gray-900">
                 Create New Task
               </DialogTitle>
               {users.length > 0 && (
-                <p className="text-sm text-gray-600 mt-1">
-                  Create a task and optionally add subtasks below
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                  <span className="hidden sm:inline">Create a task and optionally add subtasks below</span>
+                  <span className="sm:hidden">Create a new task</span>
                 </p>
               )}
             </div>
@@ -254,10 +255,10 @@ export default function TaskModal() {
               variant="ghost"
               size="sm"
               onClick={closeCreateModal}
-              className="h-8 w-8 p-0 hover:bg-gray-100 transition-colors flex-shrink-0"
+              className="h-8 w-8 sm:h-10 sm:w-10 p-0 hover:bg-gray-100 transition-colors flex-shrink-0"
               title="Close create modal"
             >
-              <RiCloseLine className="h-4 w-4" />
+              <RiCloseLine className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
           </div>
         </DialogHeader>
@@ -268,9 +269,9 @@ export default function TaskModal() {
             <p className="text-gray-600">Loading users...</p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 px-3 sm:px-6 pb-3 sm:pb-6">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="title" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Title *
             </label>
             <Input
@@ -280,12 +281,12 @@ export default function TaskModal() {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter task title..."
               required
-              className="w-full"
+              className="w-full h-9 sm:h-10 text-sm sm:text-base"
             />
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="description" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Description
             </label>
             <Textarea
@@ -293,19 +294,19 @@ export default function TaskModal() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Enter task description..."
-              rows={3}
-              className="w-full resize-none"
+              rows={2}
+              className="w-full resize-none text-sm sm:text-base"
             />
           </div>
 
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="status" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 Status
               </label>
               <Select value={status} onValueChange={(value: TaskStatus) => setStatus(value)}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9 sm:h-10 text-sm sm:text-base">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -317,11 +318,11 @@ export default function TaskModal() {
             </div>
 
             <div>
-              <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="priority" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 Priority
               </label>
               <Select value={priority} onValueChange={(value: TaskPriority) => setPriority(value)}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9 sm:h-10 text-sm sm:text-base">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -333,13 +334,13 @@ export default function TaskModal() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label htmlFor="assignee" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="assignee" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 Assignee
               </label>
               <Select value={assigneeId} onValueChange={setAssigneeId}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9 sm:h-10 text-sm sm:text-base">
                   <SelectValue placeholder="Select assignee">
                     {assigneeId ? getAssigneeDisplayName(assigneeId) : 'Select assignee'}
                   </SelectValue>
@@ -356,10 +357,10 @@ export default function TaskModal() {
                     return (
                       <SelectItem key={userOption.id} value={userOption.id.toString()}>
                         <div className="flex items-center space-x-2">
-                          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white text-xs font-bold">
+                          <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white text-xs font-bold">
                             {userOption.name?.charAt(0)?.toUpperCase() || userOption.email?.charAt(0)?.toUpperCase() || 'U'}
                           </div>
-                          <span>{displayName}</span>
+                          <span className="text-sm sm:text-base truncate">{displayName}</span>
                         </div>
                       </SelectItem>
                     )
@@ -369,7 +370,7 @@ export default function TaskModal() {
             </div>
 
             <div>
-              <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="dueDate" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 Due Date
               </label>
               <Input
@@ -378,15 +379,15 @@ export default function TaskModal() {
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
-                className="w-full"
+                className="w-full h-9 sm:h-10 text-sm sm:text-base"
               />
             </div>
           </div>
 
           {/* Subtasks Section - RE-ENABLED WITH SAFE PATTERNS */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="block text-sm font-medium text-gray-700">
+          <div className="space-y-2 sm:space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700">
                 Subtasks (Optional)
               </label>
               <Button
@@ -394,31 +395,31 @@ export default function TaskModal() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowSubtasks(!showSubtasks)}
-                className="text-purple-600 border-purple-300 hover:bg-purple-50"
+                className="text-purple-600 border-purple-300 hover:bg-purple-50 text-xs sm:text-sm h-8 sm:h-9 self-start sm:self-auto"
               >
-                <RiAddLine className="h-4 w-4 mr-1" />
+                <RiAddLine className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                 {showSubtasks ? 'Hide Subtasks' : 'Add Subtasks'}
               </Button>
             </div>
             
             {showSubtasks && (
-              <div className="space-y-3 p-4 bg-gray-50 rounded-lg border">
-                <p className="text-sm text-gray-600">
+              <div className="space-y-2 sm:space-y-3 p-3 sm:p-4 bg-gray-50 rounded-lg border">
+                <p className="text-xs sm:text-sm text-gray-600">
                   Add subtasks to break down this task into smaller pieces
                 </p>
                 
                 {subtasks.map((subtask, index) => (
-                  <div key={index} className="space-y-2 p-3 bg-white rounded border">
-                    <div className="flex items-start justify-between">
-                      <span className="text-sm font-medium text-gray-700">Subtask {index + 1}</span>
+                  <div key={index} className="space-y-1.5 sm:space-y-2 p-2.5 sm:p-3 bg-white rounded border">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs sm:text-sm font-medium text-gray-700">Subtask {index + 1}</span>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => removeSubtask(index)}
-                        className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
                       >
-                        <RiDeleteBin6Line className="h-3 w-3" />
+                        <RiDeleteBin6Line className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                       </Button>
                     </div>
                     
@@ -426,7 +427,7 @@ export default function TaskModal() {
                       placeholder="Subtask title..."
                       value={subtask.title}
                       onChange={(e) => updateSubtask(index, 'title', e.target.value)}
-                      className="text-sm"
+                      className="text-xs sm:text-sm h-8 sm:h-9"
                     />
                     
                     <Textarea
@@ -434,7 +435,7 @@ export default function TaskModal() {
                       value={subtask.description || ''}
                       onChange={(e) => updateSubtask(index, 'description', e.target.value)}
                       rows={2}
-                      className="text-sm resize-none"
+                      className="text-xs sm:text-sm resize-none"
                     />
                     
                     <div>
@@ -443,7 +444,7 @@ export default function TaskModal() {
                         placeholder="Due date (optional)..."
                         value={subtask.dueDate || ''}
                         onChange={(e) => updateSubtask(index, 'dueDate', e.target.value)}
-                        className="text-sm"
+                        className="text-xs sm:text-sm h-8 sm:h-9"
                       />
                     </div>
                     </div>
@@ -454,28 +455,29 @@ export default function TaskModal() {
                   variant="outline"
                   size="sm"
                   onClick={addSubtask}
-                  className="w-full border-dashed border-gray-300 text-gray-600 hover:border-purple-300 hover:text-purple-600"
+                  className="w-full border-dashed border-gray-300 text-gray-600 hover:border-purple-300 hover:text-purple-600 h-8 sm:h-9 text-xs sm:text-sm"
                 >
-                  <RiAddLine className="h-4 w-4 mr-2" />
+                  <RiAddLine className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                   Add Another Subtask
                 </Button>
               </div>
             )}
           </div>
 
-          <div className="flex justify-end space-x-2 pt-4">
+          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={closeCreateModal}
               disabled={createTaskMutation.isPending}
+              className="h-9 sm:h-10 text-sm sm:text-base order-2 sm:order-1"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={!isFormValid || createTaskMutation.isPending}
-              className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
+              className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 h-9 sm:h-10 text-sm sm:text-base order-1 sm:order-2"
             >
               {createTaskMutation.isPending ? 'Creating...' : 'Create Task'}
             </Button>

@@ -215,26 +215,27 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl max-h-[95vh] overflow-y-auto p-0" showCloseButton={false}>
+      <DialogContent className="w-[95vw] sm:w-full sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto p-0" showCloseButton={false}>
         {/* Header Section */}
         <div className="sticky top-0 z-10 bg-white border-b">
-          <DialogHeader className="p-6 pb-4">
-            <div className="flex items-start justify-between">
+          <DialogHeader className="p-3 sm:p-4 pb-3">
+            <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-2">
-                  <DialogTitle className="text-2xl font-bold text-gray-900">
+                <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                  <DialogTitle className="text-lg sm:text-2xl font-bold text-gray-900">
                     Edit Task
                   </DialogTitle>
-                  <RiEditLine className="w-6 h-6 text-blue-600" />
+                  <RiEditLine className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                 </div>
                 {task && (
-                  <div className="text-sm text-gray-600">
+                  <div className="text-xs sm:text-sm text-gray-600">
                     {task.parentId ? (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs px-2 py-1">
                         Subtask
                       </Badge>
                     ) : (
-                      <span>Editing main task and its subtasks</span>
+                      <span className="hidden sm:inline">Editing main task and its subtasks</span>
+                      <span className="sm:hidden">Edit task</span>
                     )}
                   </div>
                 )}
@@ -243,33 +244,33 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="hover:bg-gray-100 transition-colors"
+                className="hover:bg-gray-100 transition-colors w-8 h-8 sm:w-10 sm:h-10 p-0 flex-shrink-0"
               >
-                <RiCloseLine className="h-5 w-5" />
+                <RiCloseLine className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </div>
           </DialogHeader>
         </div>
         {/* Content Section */}
-        <div className="p-6">
+        <div className="p-3 sm:p-4">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Main Task Information Accordion */}
-            <Accordion type="multiple" defaultValue={["basic", "details", "subtasks"]} className="space-y-4">
+            <Accordion type="multiple" defaultValue={["basic", "details", "subtasks"]} className="space-y-3 sm:space-y-4">
               
               {/* Basic Information */}
               <AccordionItem value="basic" className="border rounded-lg">
-                <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-gray-50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <RiEditLine className="w-5 h-5 text-blue-600" />
+                <AccordionTrigger className="px-3 sm:px-4 py-2.5 sm:py-3 hover:no-underline hover:bg-gray-50">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 bg-blue-100 rounded-md flex items-center justify-center">
+                      <RiEditLine className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
                     </div>
-                    <span className="text-lg font-semibold">Basic Information</span>
+                    <span className="text-sm sm:text-base font-semibold">Basic Information</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                  <div className="space-y-4">
+                <AccordionContent className="px-3 sm:px-4 pb-3 sm:pb-4">
+                  <div className="space-y-3 sm:space-y-4">
                     <div>
-                      <label htmlFor="edit-title" className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label htmlFor="edit-title" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                         Title *
                       </label>
                       <Input
@@ -279,12 +280,12 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Enter task title..."
                         required
-                        className="w-full h-10"
+                        className="w-full h-9 sm:h-10 text-sm sm:text-base"
                       />
                     </div>
 
                     <div>
-                      <label htmlFor="edit-description" className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label htmlFor="edit-description" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                         Description
                       </label>
                       <Textarea
@@ -292,8 +293,8 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Enter task description..."
-                        rows={4}
-                        className="w-full resize-none"
+                        rows={3}
+                        className="w-full resize-none text-sm sm:text-base"
                       />
                     </div>
                   </div>
@@ -302,22 +303,22 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
 
               {/* Task Details */}
               <AccordionItem value="details" className="border rounded-lg">
-                <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-gray-50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <RiFlagLine className="w-5 h-5 text-purple-600" />
+                <AccordionTrigger className="px-3 sm:px-4 py-2.5 sm:py-3 hover:no-underline hover:bg-gray-50">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 bg-purple-100 rounded-md flex items-center justify-center">
+                      <RiFlagLine className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600" />
                     </div>
-                    <span className="text-lg font-semibold">Task Details</span>
+                    <span className="text-sm sm:text-base font-semibold">Details</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <AccordionContent className="px-3 sm:px-4 pb-3 sm:pb-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <label htmlFor="edit-status" className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label htmlFor="edit-status" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                         Status
                       </label>
                       <Select value={status} onValueChange={(value: TaskStatus) => setStatus(value)}>
-                        <SelectTrigger className="h-10">
+                        <SelectTrigger className="h-9 sm:h-10 text-sm sm:text-base">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -329,11 +330,11 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
                     </div>
 
                     <div>
-                      <label htmlFor="edit-priority" className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label htmlFor="edit-priority" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                         Priority
                       </label>
                       <Select value={priority} onValueChange={(value: TaskPriority) => setPriority(value)}>
-                        <SelectTrigger className="h-10">
+                        <SelectTrigger className="h-9 sm:h-10 text-sm sm:text-base">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -346,11 +347,11 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
                     </div>
 
                     <div>
-                      <label htmlFor="edit-assignee" className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label htmlFor="edit-assignee" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                         Assignee
                       </label>
                       <Select value={assigneeId} onValueChange={setAssigneeId}>
-                        <SelectTrigger className="h-10">
+                        <SelectTrigger className="h-9 sm:h-10 text-sm sm:text-base">
                           <SelectValue placeholder="Select assignee">
                             {assigneeId ? getAssigneeDisplayName(assigneeId) : 'Select assignee'}
                           </SelectValue>
@@ -367,10 +368,10 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
                             return (
                               <SelectItem key={userOption.id} value={userOption.id.toString()}>
                                 <div className="flex items-center space-x-2">
-                                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-violet-600 to-violet-700 flex items-center justify-center text-white text-xs font-bold">
+                                  <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gradient-to-br from-violet-600 to-violet-700 flex items-center justify-center text-white text-xs font-bold">
                                     {userOption.name?.charAt(0)?.toUpperCase() || userOption.email?.charAt(0)?.toUpperCase() || 'U'}
                                   </div>
-                                  <span>{displayName}</span>
+                                  <span className="text-sm sm:text-base truncate">{displayName}</span>
                                 </div>
                               </SelectItem>
                             )
@@ -380,7 +381,7 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
                     </div>
 
                     <div>
-                      <label htmlFor="edit-dueDate" className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label htmlFor="edit-dueDate" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                         Due Date
                       </label>
                       <Input
@@ -388,7 +389,7 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
                         type="date"
                         value={dueDate}
                         onChange={(e) => setDueDate(e.target.value)}
-                        className="w-full h-10"
+                        className="w-full h-9 sm:h-10 text-sm sm:text-base"
                       />
                     </div>
                   </div>
@@ -398,23 +399,23 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
               {/* Subtasks Management */}
               {!task?.parentId && (
                 <AccordionItem value="subtasks" className="border rounded-lg">
-                  <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-gray-50">
-                    <div className="flex items-center justify-between w-full mr-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                          <RiCheckLine className="w-5 h-5 text-green-600" />
+                  <AccordionTrigger className="px-3 sm:px-4 py-2.5 sm:py-3 hover:no-underline hover:bg-gray-50">
+                    <div className="flex items-center justify-between w-full mr-3 sm:mr-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 sm:w-6 sm:h-6 bg-green-100 rounded-md flex items-center justify-center">
+                          <RiCheckLine className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
                         </div>
-                        <span className="text-lg font-semibold">Subtasks</span>
+                        <span className="text-sm sm:text-base font-semibold">Subtasks</span>
                       </div>
-                      <Badge variant="secondary" className="bg-green-100 text-green-800 font-medium">
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 font-medium text-xs px-2 py-1">
                         {subtasks.length} subtask{subtasks.length !== 1 ? 's' : ''}
                       </Badge>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="px-6 pb-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-gray-600">
+                  <AccordionContent className="px-3 sm:px-4 pb-3 sm:pb-4">
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <p className="text-xs sm:text-sm text-gray-600">
                           Manage subtasks for this task
                         </p>
                         <Button
@@ -422,24 +423,24 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
                           variant="outline"
                           size="sm"
                           onClick={addSubtask}
-                          className="text-green-600 border-green-300 hover:bg-green-50"
+                          className="text-green-600 border-green-300 hover:bg-green-50 text-xs sm:text-sm h-8 sm:h-9"
                         >
-                          <RiAddLine className="h-4 w-4 mr-1" />
+                          <RiAddLine className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                           Add Subtask
                         </Button>
                       </div>
                       
                       {subtasks.length > 0 && (
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:space-y-3">
                           {subtasks.map((subtask, index) => (
                             <Card key={index} className="border border-gray-200">
-                              <CardContent className="p-4">
-                                <div className="space-y-3">
-                                  <div className="flex items-start justify-between">
-                                    <span className="text-sm font-medium text-gray-700">
+                              <CardContent className="p-3 sm:p-4">
+                                <div className="space-y-2 sm:space-y-2.5">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <span className="text-xs sm:text-sm font-medium text-gray-700">
                                       Subtask {index + 1}
                                       {subtask.isExisting && (
-                                        <Badge variant="outline" className="ml-2 text-xs">
+                                        <Badge variant="outline" className="ml-1.5 sm:ml-2 text-xs px-1.5 py-0.5">
                                           Existing
                                         </Badge>
                                       )}
@@ -449,9 +450,9 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => removeSubtask(index)}
-                                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                      className="h-5 w-5 sm:h-6 sm:w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
                                     >
-                                      <RiDeleteBin6Line className="h-3 w-3" />
+                                      <RiDeleteBin6Line className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                     </Button>
                                   </div>
                                   
@@ -459,7 +460,7 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
                                     placeholder="Subtask title..."
                                     value={subtask.title}
                                     onChange={(e) => updateSubtask(index, 'title', e.target.value)}
-                                    className="text-sm"
+                                    className="text-xs sm:text-sm h-8 sm:h-9"
                                   />
                                   
                                   <Textarea
@@ -467,7 +468,7 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
                                     value={subtask.description || ''}
                                     onChange={(e) => updateSubtask(index, 'description', e.target.value)}
                                     rows={2}
-                                    className="text-sm resize-none"
+                                    className="text-xs sm:text-sm resize-none"
                                   />
                                   
                                   <div>
@@ -476,7 +477,7 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
                                       placeholder="Due date (optional)..."
                                       value={subtask.dueDate || ''}
                                       onChange={(e) => updateSubtask(index, 'dueDate', e.target.value)}
-                                      className="text-sm"
+                                      className="text-xs sm:text-sm h-8 sm:h-9"
                                     />
                                   </div>
                                 </div>
@@ -493,22 +494,22 @@ export default function TaskEditModal({ task, isOpen, onClose }: TaskEditModalPr
 
             {/* Action Buttons */}
             <Separator />
-            <div className="flex justify-end space-x-3 pt-4">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
                 disabled={updateTaskMutation.isPending || createSubtaskMutation.isPending || deleteSubtaskMutation.isPending}
-                className="px-6"
+                className="px-4 sm:px-6 h-9 sm:h-10 text-sm sm:text-base order-2 sm:order-1"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={!isFormValid || updateTaskMutation.isPending || createSubtaskMutation.isPending || deleteSubtaskMutation.isPending}
-                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-6"
+                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-4 sm:px-6 h-9 sm:h-10 text-sm sm:text-base order-1 sm:order-2"
               >
-                <RiSaveLine className="h-4 w-4 mr-2" />
+                <RiSaveLine className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                 {updateTaskMutation.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
